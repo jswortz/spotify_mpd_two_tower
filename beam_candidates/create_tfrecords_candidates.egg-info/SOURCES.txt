@@ -1,0 +1,9 @@
+README.md
+setup.py
+bq_to_tfr/__init__.py
+bq_to_tfr/candidate_pipeline.py
+create_tfrecords_candidates.egg-info/PKG-INFO
+create_tfrecords_candidates.egg-info/SOURCES.txt
+create_tfrecords_candidates.egg-info/dependency_links.txt
+create_tfrecords_candidates.egg-info/requires.txt
+create_tfrecords_candidates.egg-info/top_level.txt

@@ -1,0 +1,96 @@
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-210026, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
+Traceback (most recent call last):
+  File "main-train.py", line 75, in <module>
+    main()
+  File "main-train.py", line 72, in main
+    train_pipe.run(args)
+  File "/home/jupyter/spotify_mpd_two_tower/beam_training/train_pipeline/train_pipe.py", line 282, in run
+    | "Write as TFRecords to GCS" >> write_to_tf_record
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/pipeline.py", line 598, in __exit__
+    self.result.wait_until_finish()
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/runners/dataflow/dataflow_runner.py", line 1665, in wait_until_finish
+    '{}'.format(consoleUrl))
+AssertionError: Job did not reach to a terminal state after waiting indefinitely. Console URL: https://console.cloud.google.com/dataflow/jobs/<RegionId>/2022-09-21_14_00_32-15968430750561288327?project=<ProjectId>
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-210129, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
+Traceback (most recent call last):
+  File "main-train.py", line 75, in <module>
+    main()
+  File "main-train.py", line 72, in main
+    train_pipe.run(args)
+  File "/home/jupyter/spotify_mpd_two_tower/beam_training/train_pipeline/train_pipe.py", line 282, in run
+    | "Write as TFRecords to GCS" >> write_to_tf_record
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/pipeline.py", line 598, in __exit__
+    self.result.wait_until_finish()
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/runners/dataflow/dataflow_runner.py", line 1665, in wait_until_finish
+    '{}'.format(consoleUrl))
+AssertionError: Job did not reach to a terminal state after waiting indefinitely. Console URL: https://console.cloud.google.com/dataflow/jobs/<RegionId>/2022-09-21_14_01_35-6896687472221112540?project=<ProjectId>
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-213554, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
+Traceback (most recent call last):
+  File "main-train.py", line 75, in <module>
+    main()
+  File "main-train.py", line 72, in main
+    train_pipe.run(args)
+  File "/home/jupyter/spotify_mpd_two_tower/beam_training/train_pipeline/train_pipe.py", line 282, in run
+    | "Write as TFRecords to GCS" >> write_to_tf_record
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/pipeline.py", line 598, in __exit__
+    self.result.wait_until_finish()
+  File "/opt/conda/lib/python3.7/site-packages/apache_beam/runners/dataflow/dataflow_runner.py", line 1658, in wait_until_finish
+    time.sleep(5.0)
+KeyboardInterrupt
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-220015, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-224004, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
+warning: sdist: standard file not found: should have one of README, README.rst, README.txt, README.md
+
+warning: check: missing required meta-data: url
+
+warning: check: missing meta-data: either (author and author_email) or (maintainer and maintainer_email) must be supplied
+
+/opt/conda/lib/python3.7/site-packages/apache_beam/io/gcp/bigquery.py:2739: BeamDeprecationWarning: options is deprecated since First stable release. References to <pipeline>.options will not be supported
+  temp_location = pcoll.pipeline.options.view_as(
+Number of Expected TFRecords: 5106
+GoogleCloudOptions(create_from_snapshot=None, dataflow_endpoint=https://dataflow.googleapis.com, dataflow_kms_key=None, dataflow_service_options=None, enable_artifact_caching=False, enable_hot_key_logging=False, enable_streaming_engine=False, flexrs_goal=None, impersonate_service_account=None, job_name=spotify-bq-tfrecords-v6-220921-230002, labels=None, no_auth=False, project=hybrid-vertex, region=us-central1, service_account_email=None, staging_location=gs://spotify-beam-v3/v3/job/staging/, temp_location=gs://spotify-beam-v3/v3/job/temp/, template_location=None, transform_name_mapping=None, update=False)
