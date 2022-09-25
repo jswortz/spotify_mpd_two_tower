@@ -201,11 +201,13 @@ class Playlist_Model(tf.keras.Model):
         # Feature: pid
         self.pl_track_uri_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.StringLookup(
-                    vocabulary=vocab_dict['track_uri_can'], 
-                    mask_token=None, 
-                    name="pl_track_uri_lookup", 
-                ),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=vocab_dict['track_uri_can'], 
+                #     mask_token=None, 
+                #     name="pl_track_uri_lookup", 
+                # ),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
+
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['track_uri_can'])+1,
                     output_dim=EMBEDDING_DIM,
@@ -277,8 +279,10 @@ class Playlist_Model(tf.keras.Model):
         self.artist_name_pl_embedding = tf.keras.Sequential(
             [
                 # tf.keras.layers.Flatten(),
-                tf.keras.layers.StringLookup(
-                    vocabulary=tf.constant(vocab_dict['artist_name_can']), mask_token=None),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=tf.constant(vocab_dict['artist_name_can']), mask_token=None),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["artist_name_can"])),
+
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['artist_name_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -294,8 +298,9 @@ class Playlist_Model(tf.keras.Model):
         self.track_uri_pl_embedding = tf.keras.Sequential(
             [
                 # tf.keras.layers.Flatten(),
-                tf.keras.layers.StringLookup(
-                    vocabulary=vocab_dict['track_uri_can'], mask_token=''),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=vocab_dict['track_uri_can'], mask_token=''),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['track_uri_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -310,14 +315,15 @@ class Playlist_Model(tf.keras.Model):
         self.track_name_pl_embedding = tf.keras.Sequential(
             [
                 # tf.keras.layers.Flatten(),
-                tf.keras.layers.StringLookup(
-                    vocabulary=vocab_dict['track_name_can'], 
-                    name="track_name_pl_lookup",
-                    output_mode='int',
-                    mask_token=''
-                ),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=vocab_dict['track_name_can'], 
+                #     name="track_name_pl_lookup",
+                #     output_mode='int',
+                #     mask_token=''
+                # ),
+            tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_name_can"])),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['track_name_can']) + 2, 
+                    input_dim=len(vocab_dict['track_name_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="track_name_pl_emb_layer",
                     mask_zero=False
@@ -350,11 +356,12 @@ class Playlist_Model(tf.keras.Model):
         self.album_name_pl_embedding = tf.keras.Sequential(
             [
                 # tf.keras.layers.Flatten(),
-                tf.keras.layers.StringLookup(
-                    vocabulary=vocab_dict['album_name_can'], 
-                    mask_token=None, 
-                    name="album_name_pl_lookup"
-                ),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=vocab_dict['album_name_can'], 
+                #     mask_token=None, 
+                #     name="album_name_pl_lookup"
+                # ),
+            tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_name_can"])),
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['album_name_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -429,10 +436,11 @@ class Playlist_Model(tf.keras.Model):
         self.artist_genres_pl_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Flatten(),
-                tf.keras.layers.StringLookup(
-                    vocabulary=vocab_dict['artist_genres_can'], mask_token=''),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"])),
+                # tf.keras.layers.StringLookup(
+                #     vocabulary=vocab_dict['artist_genres_can'], mask_token=''),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['artist_genres_can']) + 2, 
+                    input_dim=len(vocab_dict['artist_genres_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_genres_pl_emb_layer",
                     mask_zero=False
@@ -605,9 +613,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: track_uri_can
         self.track_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1, 
+                    input_dim=len(vocab_dict["track_uri_can"])+1, 
                     output_dim=EMBEDDING_DIM,
                     name="track_uri_can_emb_layer",
                 ),
@@ -617,9 +625,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: album_uri_can
         self.album_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"])),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1, 
+                    input_dim=len(vocab_dict["album_uri_can"])+1, 
                     output_dim=EMBEDDING_DIM,
                     name="album_uri_can_emb_layer",
                 ),
