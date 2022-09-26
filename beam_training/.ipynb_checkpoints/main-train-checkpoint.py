@@ -42,10 +42,6 @@ NUM_TF_RECORDS = total_samples // samples_per_file
 
 if NUM_TF_RECORDS % total_samples:
     NUM_TF_RECORDS += 1
-    
-if "val" in sys.argv[2]:
-    NUM_TF_RECORDS /= 10
-    NUM_TF_RECORDS = int(NUM_TF_RECORDS)
 
 
 args = {

@@ -356,7 +356,6 @@ class Playlist_Model(tf.keras.Model):
         # Feature: album_name_pl
         self.album_name_pl_embedding = tf.keras.Sequential(
             [
-                # tf.keras.layers.Flatten(),
                 # tf.keras.layers.StringLookup(
                 #     vocabulary=vocab_dict['album_name_can'], 
                 #     mask_token=None, 

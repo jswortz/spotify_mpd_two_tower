@@ -57,6 +57,7 @@ NUM_TF_RECORDS = total_samples // samples_per_file
 
 if NUM_TF_RECORDS % total_samples:
     NUM_TF_RECORDS += 1
+
     
 print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
 
@@ -258,6 +259,11 @@ def run(args):
         # '--requirements_file', 'requirements.txt',
         # '--worker_machine_type','xxx'
     ]
+    if "valid" in args["folder"]:
+        ### Validation override to create fewer records 
+        global NUM_TF_RECORDS
+        NUM_TF_RECORDS /= 10
+        NUM_TF_RECORDS = int(NUM_TF_RECORDS)
     
     pipeline_options = beam.options.pipeline_options.GoogleCloudOptions(pipeline_args)
     # pipeline_options.view_as(SetupOptions).save_main_session = False #True
