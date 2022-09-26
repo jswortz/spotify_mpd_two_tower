@@ -282,7 +282,7 @@ class Playlist_Model(tf.keras.Model):
                 # tf.keras.layers.Flatten(),
                 # tf.keras.layers.StringLookup(
                 #     vocabulary=tf.constant(vocab_dict['artist_name_can']), mask_token=None),
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["artist_name_can"])),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["artist_name_can"]), mask_value=''),
 
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['artist_name_can']) + 1, 
@@ -301,7 +301,7 @@ class Playlist_Model(tf.keras.Model):
                 # tf.keras.layers.Flatten(),
                 # tf.keras.layers.StringLookup(
                 #     vocabulary=vocab_dict['track_uri_can'], mask_token=''),
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"]), mask_value=''),
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['track_uri_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -322,7 +322,7 @@ class Playlist_Model(tf.keras.Model):
                 #     output_mode='int',
                 #     mask_token=''
                 # ),
-            tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_name_can"])),
+            tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_name_can"]), mask_value=''),
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['track_name_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -362,7 +362,7 @@ class Playlist_Model(tf.keras.Model):
                 #     mask_token=None, 
                 #     name="album_name_pl_lookup"
                 # ),
-            tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_name_can"])),
+            tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_name_can"]), mask_value=''),
                 tf.keras.layers.Embedding(
                     input_dim=len(vocab_dict['album_name_can']) + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -437,7 +437,7 @@ class Playlist_Model(tf.keras.Model):
         self.artist_genres_pl_embedding = tf.keras.Sequential(
             [
                 # tf.keras.layers.Flatten(),
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"])),
+                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"]), mask_value=''),
                 # tf.keras.layers.StringLookup(
                 #     vocabulary=vocab_dict['artist_genres_can'], mask_token=''),
                 tf.keras.layers.Embedding(
