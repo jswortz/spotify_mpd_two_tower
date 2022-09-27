@@ -135,9 +135,16 @@ for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimit
     candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
 #generate the candidate dataset
-candidate_dataset = tf.data.TFRecordDataset(candidate_files)
-
-parsed_candidate_dataset = candidate_dataset.map(parse_candidate_tfrecord_fn) 
+candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
+parsed_candidate_dataset = candidate_dataset.interleave(
+    lambda x: tf.data.TFRecordDataset(x),
+    cycle_length=tf.data.AUTOTUNE, 
+    num_parallel_calls=tf.data.AUTOTUNE,
+    deterministic=False
+).map(
+    parse_candidate_tfrecord_fn,
+    num_parallel_calls=tf.data.AUTOTUNE,
+).cache()
 
 
 client = storage.Client()
