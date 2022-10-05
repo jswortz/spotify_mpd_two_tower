@@ -15,11 +15,10 @@ from apache_beam.options.pipeline_options import SetupOptions
 PROJECT_ID = 'hybrid-vertex'
 BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
 REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v6'
+# VERSION = 'v6'
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
-JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
 MAX_WORKERS = '10'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
@@ -32,36 +31,14 @@ TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between projec
 
 QUERY = f"SELECT * FROM `{PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}`"
 
-# storage
-# setup
-PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
-REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v3'
 
-# storage
-ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
 
-DATA_DIR = ROOT + '/data/' # Location to store data
-# STATS_DIR = ROOT +'/stats/' # Location to store stats 
-STAGING_DIR = ROOT + '/job/staging/' # Dataflow staging directory on GCP
-TEMP_DIR =  ROOT + '/job/temp/' # Dataflow temporary directory on GCP
-TF_RECORD_DIR = ROOT + '/tf-records/'
 # CANDIDATE_DIR = ROOT + "/candidates/"
 
 # estimate TF-Record shard count needed
 # TF-Records
-total_samples = 65_346_428  
-samples_per_file = 12_800 
-NUM_TF_RECORDS = total_samples // samples_per_file
-
-if NUM_TF_RECORDS % total_samples:
-    NUM_TF_RECORDS += 1
 
     
-print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
-
-
 def _bytes_feature(value):
     """
     Get byte features
@@ -245,6 +222,18 @@ def run(args):
     define pipeline config
     '''
     
+    # storage
+    VERSION = args['version']
+    JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
+
+    ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
+
+    DATA_DIR = ROOT + '/data/' # Location to store data
+    # STATS_DIR = ROOT +'/stats/' # Location to store stats 
+    STAGING_DIR = ROOT + '/job/staging/' # Dataflow staging directory on GCP
+    TEMP_DIR =  ROOT + '/job/temp/' # Dataflow temporary directory on GCP
+    TF_RECORD_DIR = ROOT + '/tf-records/'
+    
     pipeline_args = [
         '--runner', RUNNER,
         '--network', NETWORK,
@@ -259,11 +248,7 @@ def run(args):
         # '--requirements_file', 'requirements.txt',
         # '--worker_machine_type','xxx'
     ]
-    if "valid" in args["folder"]:
-        ### Validation override to create fewer records 
-        global NUM_TF_RECORDS
-        NUM_TF_RECORDS /= 10
-        NUM_TF_RECORDS = int(NUM_TF_RECORDS)
+
     
     pipeline_options = beam.options.pipeline_options.GoogleCloudOptions(pipeline_args)
     # pipeline_options.view_as(SetupOptions).save_main_session = False #True
@@ -276,7 +261,7 @@ def run(args):
     write_to_tf_record = beam.io.WriteToTFRecord(
         file_path_prefix = f'{ROOT}/{args["folder"]}/', 
         file_name_suffix=".tfrecords",
-        num_shards=NUM_TF_RECORDS
+        num_shards=args['num_tfrecords']
     )
 
     with beam.Pipeline(RUNNER, options=pipeline_options) as pipeline:

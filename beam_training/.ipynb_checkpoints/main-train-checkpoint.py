@@ -5,7 +5,7 @@ import sys
 PROJECT_ID = 'hybrid-vertex'
 BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
 REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v3'
+VERSION = sys.argv[5]
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
@@ -36,12 +36,18 @@ CANDIDATE_DIR = ROOT + "/candidates/"
 QUERY = f"SELECT * FROM {PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}"
 
 
-total_samples = 65_346_428  
-samples_per_file = 12_800 
-NUM_TF_RECORDS = total_samples // samples_per_file
+# total_samples = 65_346_428  
+# samples_per_file = 12_800 
+# NUM_TF_RECORDS = total_samples // samples_per_file
 
-if NUM_TF_RECORDS % total_samples:
-    NUM_TF_RECORDS += 1
+total_mb_train = sys.argv[4]
+target_shard_size_mb = sys.argv[3]
+
+NUM_TF_RECORDS = int(total_mb_train) // int(target_shard_size_mb)
+
+
+# if NUM_TF_RECORDS % total_samples:
+#     NUM_TF_RECORDS += 1
 
 
 args = {
@@ -51,16 +57,18 @@ args = {
     'bq_source_table': TABLE_SPEC,
     'network': NETWORK,
     'candidate_sink': CANDIDATE_DIR,
-    'num_candidate_tfrecords': NUM_TF_RECORDS,
+    'num_tfrecords': NUM_TF_RECORDS,
     'project': PROJECT_ID,
     'region': REGION,
     'staging_location': STAGING_DIR,
     'temp_location': TEMP_DIR,
     'save_main_session': True,
+    'version': VERSION,
     'setup_file': './setup.py',
     'folder': sys.argv[2], ## train or valid
 }
 
+print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
 
 
 def main():
