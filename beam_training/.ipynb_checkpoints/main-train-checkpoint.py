@@ -72,8 +72,8 @@ print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
 
 
 def main():
-    from train_pipeline import train_pipe
-    train_pipe.run(args)
+    from train_pipeline import train_pipe_shape
+    train_pipe_shape.run(args)
     
 if __name__ == '__main__':
     main()

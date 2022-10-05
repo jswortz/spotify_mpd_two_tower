@@ -4,6 +4,8 @@ create_tfrecords_training.egg-info/SOURCES.txt
 create_tfrecords_training.egg-info/dependency_links.txt
 create_tfrecords_training.egg-info/requires.txt
 create_tfrecords_training.egg-info/top_level.txt
+create_tfrecords_training.egg-info/.ipynb_checkpoints/requires-checkpoint.txt
 train_pipeline/__init__.py
 train_pipeline/test.py
 train_pipeline/train_pipe.py
+train_pipeline/train_pipe_shape.py
