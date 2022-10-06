@@ -61,8 +61,12 @@ feats = {
     'artist_genres_pl': tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
 }
 
+options = tf.data.Options()
+options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.AUTO
+
+
 def parse_tfrecord(example):
-    example = tf.io.parse_example(
+    example = tf.io.parse_single_example(
         example, 
         feats
     )
@@ -98,7 +102,9 @@ parsed_candidate_dataset = candidate_dataset.interleave(
 ).map(
     parse_candidate_tfrecord_fn,
     num_parallel_calls=tf.data.AUTOTUNE,
-).cache()
+).prefetch(
+    tf.data.AUTOTUNE,
+).cache().with_options(options)
 
 
 client = storage.Client()
@@ -680,7 +686,9 @@ class TheTwoTowers(tfrs.models.Model):
         
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE)
+                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(
+    tf.data.AUTOTUNE,
+)
             )
         )
         
