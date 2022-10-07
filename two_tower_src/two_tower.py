@@ -102,9 +102,7 @@ parsed_candidate_dataset = candidate_dataset.interleave(
 ).map(
     parse_candidate_tfrecord_fn,
     num_parallel_calls=tf.data.AUTOTUNE,
-).prefetch(
-    tf.data.AUTOTUNE,
-).cache().with_options(options)
+).with_options(options)
 
 
 client = storage.Client()
@@ -567,28 +565,32 @@ class Candidate_Track_Model(tf.keras.Model):
         self.duration_ms_can_normalized = tf.keras.layers.Normalization(
             mean=vocab_dict['avg_duration_ms_songs_pl'],
             variance=vocab_dict['var_duration_ms_songs_pl'],
-            axis=None
+            axis=None,
+            name="duration_ms_can_normalized"
         )
         
         # Feature: track_pop_can
         self.track_pop_can_normalized = tf.keras.layers.Normalization(
             mean=vocab_dict['avg_track_pop'],
             variance=vocab_dict['var_track_pop'],
-            axis=None
+            axis=None,
+            name="track_pop_can_normalized"
         )
         
         # Feature: artist_pop_can
         self.artist_pop_can_normalized = tf.keras.layers.Normalization(
             mean=vocab_dict['avg_artist_pop'],
             variance=vocab_dict['var_artist_pop'],
-            axis=None
+            axis=None,
+            name="artist_pop_can_normalized"
         )
         
         # Feature: artist_followers_can
         self.artist_followers_can_normalized = tf.keras.layers.Normalization(
             mean=vocab_dict['avg_artist_followers'],
             variance=vocab_dict['var_artist_followers'],
-            axis=None
+            axis=None,
+            name="artist_followers_can_normalized"
         )
         
         # Feature: artist_genres_can
@@ -686,7 +688,7 @@ class TheTwoTowers(tfrs.models.Model):
         
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(
+                candidates=parsed_candidate_dataset.batch(512).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(
     tf.data.AUTOTUNE,
 )
             )
