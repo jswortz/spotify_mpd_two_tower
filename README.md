@@ -1,3 +1,27 @@
+# Building Two Tower Models on Google Cloud from Spotify Data
+
+This repo is to demonstrate development of two-tower models using gcs and BigQuery for data prep and tf.data with Tensorflow Recommenders. This repo reflects the development process that later feeds into a hardened ML Ops process. For more detail on enabling Vertex Pipelines and deployment to the Matching Engine for recommendations, see [this](https://github.com/tottenjordan/spotify-tfrs) repo.
+
+### Notebook Overview
+
+1. `bq-data-prep` this takes a zip file downloaded from aicrowd (must register to download). The zip is inflated to GCS and processed to create candidate query pairs (song playlist pairs, respectively)
+
+2. `tfrecord-beam-pipeline` uses beam to download the training tables to gcs and serialize the data into tfrecords. This notebook calls on `beam_training` and `beam_candidates` module for the Dataflow job
+
+3. `vocab_generation` this notebook shows how to set the vocabulary dictionary that allows for reading parameters and vocabularies for string lookups. The model used doesn't use many of these features but this is included for an example. Some of the vocabulary values (e.g. `avg_duration_ms_seed_pl` are pre-set and should be used as the model will read these downstream.
+
+3. `build-model` this reads the tfrecords created from Dataflow and constructs a Tensorflow Recommender model for training on a single machine. Note settings tuned for a `high-gpu` single machine, single A100 gpu and may require different batch sizes for different configurations.
+
+#### Dependencies
+
+* Tensorflow 2.8.0 LTS
+* Tensorflow recommenders 0.6.0
+
+`nvtop` is recommended to monitor GPU usage when tuning settings. See [here for instructions](https://sourceexample.com/article/en/1f7da1ef56689b67858ddadcbe3bf1c3/)
+
+_______________
+# Info on Data
+
 ## The Million Playlist Dataset
 (Documentation updated Aug 5, 2020)
 
