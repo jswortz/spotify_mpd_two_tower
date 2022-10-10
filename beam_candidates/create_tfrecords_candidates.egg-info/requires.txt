@@ -1,3 +1,0 @@
-apache-beam[gcp]==2.41.0
-tensorflow==2.8.0
-gcsfs==2022.8.2

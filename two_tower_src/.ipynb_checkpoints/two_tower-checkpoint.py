@@ -8,14 +8,13 @@ import numpy as np
 import pickle as pkl
 from pprint import pprint
 
-MAX_PLAYLIST_LENGTH = 5
+MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
 EMBEDDING_DIM = 128
 PROJECTION_DIM = 100
 SEED = 1234
 USE_CROSS_LAYER=True
-DROPOUT='False'
-DROPOUT_RATE='0.33'
-TOKEN_DICT = '20000_tokens'
+DROPOUT=True
+DROPOUT_RATE=0.33
 
 client = storage.Client()
 candidate_features = {
@@ -66,6 +65,9 @@ options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoSha
 
 
 def parse_tfrecord(example):
+    """
+    Reads a serialized example from GCS and converts to tfrecord
+    """
     example = tf.io.parse_single_example(
         example, 
         feats
@@ -74,6 +76,9 @@ def parse_tfrecord(example):
 
 
 def parse_candidate_tfrecord_fn(example):
+    """
+    Reads candidate serialized examples from gcs and converts to tfrecord
+    """
     example = tf.io.parse_single_example(
         example, 
         features=candidate_features
@@ -81,9 +86,9 @@ def parse_candidate_tfrecord_fn(example):
     return example
 
 BUCKET_NAME = 'spotify-v1'
-FILE_PATH = 'vocabs/v2_string_vocabs'
-FILE_NAME = 'string_vocabs_v1_20220924-tokens22.pkl'
-DESTINATION_FILE = 'downloaded_vocabs.txt'
+# FILE_PATH = 'vocabs/v2_string_vocabs'
+# FILE_NAME = 'string_vocabs_v1_20220924-tokens22.pkl'
+# DESTINATION_FILE = 'downloaded_vocabs.txt'
 
 BUCKET = 'spotify-beam-v3'
 CANDIDATE_PREFIX = 'v3/candidates/'
@@ -93,6 +98,7 @@ for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimit
     candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
 #generate the candidate dataset
+
 candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
 parsed_candidate_dataset = candidate_dataset.interleave(
     lambda x: tf.data.TFRecordDataset(x),
@@ -106,18 +112,9 @@ parsed_candidate_dataset = candidate_dataset.interleave(
 
 
 client = storage.Client()
-
-with open(f'{DESTINATION_FILE}', 'wb') as file_obj:
-    client.download_blob_to_file(
-        f'gs://{BUCKET_NAME}/{FILE_PATH}/{FILE_NAME}', file_obj)
-
-    
-with open(f'{DESTINATION_FILE}', 'rb') as pickle_file:
-    vocab_dict_load = pkl.load(pickle_file)
-    
     
 class Playlist_Model(tf.keras.Model):
-    def __init__(self, layer_sizes, vocab_dict):
+    def __init__(self, layer_sizes):
         super().__init__()
 
         # ========================================
@@ -127,12 +124,6 @@ class Playlist_Model(tf.keras.Model):
         # Feature: playlist name
         self.pl_name_text_embedding = tf.keras.Sequential(
             [
-                # tf.keras.layers.TextVectorization(
-                #     # max_tokens=MAX_TOKENS, # not needed if passing vocab
-                #     vocabulary=vocab_dict[TOKEN_DICT]['name'], 
-                #     name="pl_name_txt_vectorizer", 
-                #     ngrams=2
-                # ),
                 tf.keras.layers.Hashing(num_bins=1_000_000), #one MILLION playlists
                 tf.keras.layers.Embedding(
                     input_dim=1_000_000 + 1,
@@ -164,10 +155,10 @@ class Playlist_Model(tf.keras.Model):
         # Feature: pid
         self.pl_track_uri_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
+                tf.keras.layers.Hashing(num_bins=2262292),
 
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['track_uri_can']),
+                    input_dim=2262292,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
                     name="pl_track_uri_layer",
@@ -178,9 +169,9 @@ class Playlist_Model(tf.keras.Model):
         
         # Feature: n_songs_pl
         n_songs_pl_buckets = np.linspace(
-            vocab_dict['min_n_songs_pl'], 
-            vocab_dict['max_n_songs_pl'], 
-            num=100
+            1, 
+            MAX_PLAYLIST_LENGTH, 
+            num=MAX_PLAYLIST_LENGTH
         )
         self.n_songs_pl_embedding = tf.keras.Sequential(
             [
@@ -195,9 +186,9 @@ class Playlist_Model(tf.keras.Model):
         
         # Feature: num_artists_pl
         n_artists_pl_buckets = np.linspace(
-            vocab_dict['min_n_artists_pl'], 
-            vocab_dict['max_n_artists_pl'], 
-            num=100
+            1, 
+            MAX_PLAYLIST_LENGTH, 
+            num=MAX_PLAYLIST_LENGTH
         )
         self.n_artists_pl_embedding = tf.keras.Sequential(
             [
@@ -213,9 +204,9 @@ class Playlist_Model(tf.keras.Model):
 
         # Feature: num_albums_pl
         n_albums_pl_buckets = np.linspace(
-            vocab_dict['min_n_albums_pl'], 
-            vocab_dict['max_n_albums_pl'],
-            num=100
+            1, 
+            MAX_PLAYLIST_LENGTH,
+            num=MAX_PLAYLIST_LENGTH
         )
         self.n_albums_pl_embedding = tf.keras.Sequential(
             [
@@ -235,10 +226,10 @@ class Playlist_Model(tf.keras.Model):
         # Feature: artist_name_pl
         self.artist_name_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["artist_name_can"]), mask_value=''),
+                tf.keras.layers.Hashing(num_bins=287710, mask_value=''),
 
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['artist_name_can']) + 1, 
+                    input_dim=287710 + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_name_pl_emb_layer",
                     mask_zero=True,
@@ -253,9 +244,9 @@ class Playlist_Model(tf.keras.Model):
         # 2.2M unique
         self.track_uri_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"]), mask_value=''),
+                tf.keras.layers.Hashing(num_bins=2262292, mask_value=''),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['track_uri_can']) + 1, 
+                    input_dim=2262292 + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="track_uri_pl_emb_layer",
                     mask_zero=True,
@@ -268,9 +259,9 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_name_pl
         self.track_name_pl_embedding = tf.keras.Sequential(
             [
-            tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_name_can"]), mask_value=''),
+            tf.keras.layers.Hashing(num_bins=1483753, mask_value=''),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['track_name_can']) + 1, 
+                    input_dim=1483753 + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="track_name_pl_emb_layer",
                     mask_zero=True,
@@ -282,8 +273,8 @@ class Playlist_Model(tf.keras.Model):
         
         Feature: duration_ms_songs_pl
         duration_ms_songs_pl_buckets = np.linspace(
-            vocab_dict['min_duration_ms_songs_pl'], 
-            vocab_dict['max_duration_ms_songs_pl'], 
+            -1, 
+            20744575, 
             num=100
         )
         self.duration_ms_songs_pl_embedding = tf.keras.Sequential(
@@ -304,9 +295,9 @@ class Playlist_Model(tf.keras.Model):
         # Feature: album_name_pl
         self.album_name_pl_embedding = tf.keras.Sequential(
             [
-            tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_name_can"]), mask_value=''),
+            tf.keras.layers.Hashing(num_bins=571625, mask_value=''),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['album_name_can']) + 1, 
+                    input_dim=571625 + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="album_name_pl_emb_layer",
                     mask_zero=True,
@@ -318,9 +309,9 @@ class Playlist_Model(tf.keras.Model):
         
         # Feature: artist_pop_pl
         artist_pop_pl_buckets = np.linspace(
-            vocab_dict['min_artist_pop'], 
-            vocab_dict['max_artist_pop'], 
-            num=10
+            1, 
+            MAX_PLAYLIST_LENGTH, 
+            num=MAX_PLAYLIST_LENGTH
         )
         self.artist_pop_pl_embedding = tf.keras.Sequential(
             [
@@ -337,8 +328,8 @@ class Playlist_Model(tf.keras.Model):
         
         # Feature: artists_followers_pl
         artists_followers_pl_buckets = np.linspace(
-            vocab_dict['min_artist_followers'], 
-            vocab_dict['max_artist_followers'], 
+            0, 
+            94437255, 
             num=10
         )
         self.artists_followers_pl_embedding = tf.keras.Sequential(
@@ -356,8 +347,8 @@ class Playlist_Model(tf.keras.Model):
         
         # Feature: track_pop_pl
         track_pop_pl_buckets = np.linspace(
-            vocab_dict['min_track_pop'], 
-            vocab_dict['max_track_pop'], 
+            -1, 
+            96, 
             num=10
         )
         self.track_pop_pl_embedding = tf.keras.Sequential(
@@ -376,9 +367,9 @@ class Playlist_Model(tf.keras.Model):
         # Feature: artist_genres_pl
         self.artist_genres_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"]), mask_value=''),
+                tf.keras.layers.Hashing(num_bins=734684, mask_value=''),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict['artist_genres_can']) + 1, 
+                    input_dim=734684 + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_genres_pl_emb_layer",
                     mask_zero=True,
@@ -473,7 +464,7 @@ class Playlist_Model(tf.keras.Model):
             return self.dense_layers(all_embs)
 
 class Candidate_Track_Model(tf.keras.Model):
-    def __init__(self, layer_sizes, vocab_dict):
+    def __init__(self, layer_sizes):
         super().__init__()
         
         # ========================================
@@ -538,9 +529,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: track_uri_can
         self.track_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["track_uri_can"])),
+                tf.keras.layers.Hashing(num_bins=2262292),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict["track_uri_can"])+1, 
+                    input_dim=2262292+1, 
                     output_dim=EMBEDDING_DIM,
                     name="track_uri_can_emb_layer",
                     input_shape=()
@@ -551,9 +542,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: album_uri_can
         self.album_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=len(vocab_dict["album_uri_can"])),
+                tf.keras.layers.Hashing(num_bins=734684),
                 tf.keras.layers.Embedding(
-                    input_dim=len(vocab_dict["album_uri_can"])+1, 
+                    input_dim=734684+1, 
                     output_dim=EMBEDDING_DIM,
                     name="album_uri_can_emb_layer",
                     input_shape=()
@@ -563,32 +554,32 @@ class Candidate_Track_Model(tf.keras.Model):
         
         # Feature: duration_ms_can
         self.duration_ms_can_normalized = tf.keras.layers.Normalization(
-            mean=vocab_dict['avg_duration_ms_songs_pl'],
-            variance=vocab_dict['var_duration_ms_songs_pl'],
+            mean=234823.14,
+            variance=5558806228.41,
             axis=None,
             name="duration_ms_can_normalized"
         )
         
         # Feature: track_pop_can
         self.track_pop_can_normalized = tf.keras.layers.Normalization(
-            mean=vocab_dict['avg_track_pop'],
-            variance=vocab_dict['var_track_pop'],
+            mean=10.85,
+            variance=202.18,
             axis=None,
             name="track_pop_can_normalized"
         )
         
         # Feature: artist_pop_can
         self.artist_pop_can_normalized = tf.keras.layers.Normalization(
-            mean=vocab_dict['avg_artist_pop'],
-            variance=vocab_dict['var_artist_pop'],
+            mean=16.08,
+            variance=300.64,
             axis=None,
             name="artist_pop_can_normalized"
         )
         
         # Feature: artist_followers_can
         self.artist_followers_can_normalized = tf.keras.layers.Normalization(
-            mean=vocab_dict['avg_artist_followers'],
-            variance=vocab_dict['var_artist_followers'],
+            mean=43337.77,
+            variance=377777790193.57,
             axis=None,
             name="artist_followers_can_normalized"
         )
@@ -682,9 +673,9 @@ class TheTwoTowers(tfrs.models.Model):
     def __init__(self, layer_sizes ):
         super().__init__()
         
-        self.query_tower = Playlist_Model(layer_sizes, vocab_dict_load)
+        self.query_tower = Playlist_Model(layer_sizes)
         
-        self.candidate_tower = Candidate_Track_Model(layer_sizes, vocab_dict_load)
+        self.candidate_tower = Candidate_Track_Model(layer_sizes)
         
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
