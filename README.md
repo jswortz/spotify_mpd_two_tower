@@ -102,6 +102,7 @@ To run the notebooks successfully, follow the steps below.
 
 * Tensorflow 2.8.0 LTS
 * Tensorflow recommenders 0.6.0
+* google-cloud-aiplatform==1.15.1
 
 `nvtop` is recommended to monitor GPU usage when tuning settings. See [here for instructions](https://sourceexample.com/article/en/1f7da1ef56689b67858ddadcbe3bf1c3/)
 
