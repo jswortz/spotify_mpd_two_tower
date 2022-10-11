@@ -13,4 +13,4 @@ matrix:
       - pre
   default_encoding: utf-8
   sources:
-  - '*.ipynb' '*.md'
+  - '*.ipynb'
