@@ -1,25 +1,12 @@
 name: Spellcheck Action
 on: push
-spellchecker: hunspell
-
 jobs:
   build:
     name: Spellcheck
     runs-on: ubuntu-latest
     steps:
-    # The checkout step
     - uses: actions/checkout@master
     - uses: rojopolis/spellcheck-github-actions@0.27.0
       name: Spellcheck
-
-matrix:
-- name: Python Source
-  sources:
-  - pyspelling/**/*.py
-  aspell:
-    lang: en
-    d: en_US
-  dictionary:
-    wordlists:
-    - docs/src/dictionary/en-custom.txt
-    output: build/dictionary/python.dic
+      with:
+        config_path: .github/workflows/.spellcheck.yml # put path to configuration file here 
