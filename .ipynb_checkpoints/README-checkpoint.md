@@ -197,7 +197,7 @@ This is an array that typically contains 1,000 playlists. Each playlist is a dic
    * ***pos*** - the position of the track in the playlist (zero-based)
 
 Here's an example of a typical playlist entry:
-  
+```json
         {
             "name": "musical",
             "collaborative": "false",
@@ -254,7 +254,7 @@ Here's an example of a typical playlist entry:
             ],
 
         }
-
+```
 
 ## Tools
 There are some tools in the src/ directory that you can use with the dataset:
@@ -324,3 +324,95 @@ The million playlist dataset was built by the following researchers @ Spotify:
 * Marc Romejin
 * Romain Yon
 * Yu Zhao
+
+
+_______
+
+#### Appendix
+
+UI Endpoint formatting for predicting via instance format on Vertex Endpoint (query model):
+
+```json
+{"instances": [{
+   "album_name_can":"We Just Havent Met Yet",
+   "album_name_pl":[
+      "There's Really A Wolf",
+      "Late Nights: The Album",
+      "American Teen",
+      "Crazy In Love",
+      "Pony"
+   ],
+   "album_uri_can":"spotify:album:5l83t3mbVgCrIe1VU9uJZR",
+   "artist_followers_can":4339757.0,
+   "artist_genres_can":"'hawaiian hip hop', 'rap'",
+   "artist_genres_pl":[
+      "'hawaiian hip hop', 'rap'",
+      "'chicago rap', 'dance pop', 'pop', 'pop rap', 'r&b', 'southern hip hop', 'trap', 'urban contemporary'",
+      "'pop', 'pop r&b'",
+      "'dance pop', 'pop', 'r&b'",
+      "'chill r&b', 'pop', 'pop r&b', 'r&b', 'urban contemporary'"
+   ],
+   "artist_name_can":"Russ",
+   "artist_name_pl":[
+      "Russ",
+      "Jeremih",
+      "Khalid",
+      "Beyonc\\xc3\\xa9",
+      "William Singe"
+   ],
+   "artist_pop_can":82.0,
+   "artist_pop_pl":[
+      82.0,
+      80.0,
+      90.0,
+      87.0,
+      65.0
+   ],
+   "artist_uri_can":"spotify:artist:1z7b1Pr1rSlvWRzsW3HOrS",
+   "artists_followers_pl":[
+      4339757.0,
+      5611842.0,
+      15046756.0,
+      30713126.0,
+      603837.0
+   ],
+   "collaborative":"false",
+   "description_pl":"",
+   "duration_ms_can":237322.0,
+   "duration_ms_songs_pl":[
+      237506.0,
+      217200.0,
+      219080.0,
+      226400.0,
+      121739.0
+   ],
+   "n_songs_pl":8.0,
+   "name":"Lit Tunes ",
+   "num_albums_pl":8.0,
+   "num_artists_pl":8.0,
+   "track_name_can":"We Just Havent Met Yet",
+   "track_name_pl":[
+      "Losin Control",
+      "Paradise",
+      "Location",
+      "Crazy In Love - Remix",
+      "Pony"
+   ],
+   "track_pop_can":57.0,
+   "track_pop_pl":[
+      79.0,
+      58.0,
+      83.0,
+      71.0,
+      57.0
+   ],
+   "track_uri_can":"spotify:track:0VzDv4wiuZsLsNOmfaUy2W",
+   "track_uri_pl":[
+      "spotify:track:4cxMGhkinTocPSVVKWIw0d",
+      "spotify:track:1wNEBPo3nsbGCZRryI832I",
+      "spotify:track:152lZdxL1OR0ZMW6KquMif",
+      "spotify:track:2f4IuijXLxYOeBncS60GUD",
+      "spotify:track:4Lj8paMFwyKTGfILLELVxt"
+   ]
+}]}
+```
