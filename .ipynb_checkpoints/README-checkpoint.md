@@ -10,9 +10,11 @@ The end to end example (with public data) follows this architecture:
 
 1. [`00-bq-data-prep`](00-bq-data-prep.ipynb) this takes a zip file downloaded from a GCS bucket (gs://spotify-million-playlist-dataset). The zip is inflated to GCS and processed to create candidate query pairs (song playlist pairs, respectively)
 
-2. [`01-tfrecord-beam-pipeline`](01-tfrecord-beam-pipeline.ipynb) uses beam to download the training tables to gcs and serialize the data into tfrecords. This notebook calls on `beam_training` and `beam_candidates` module for the Dataflow job
+2. [`01-recommender-vertex-merlin`](01-recommender-vertex-merlin.ipynb) this reads data from the BQ training and validation tables and converts records to parquet in GCS. NVtabular is used to encode and preprocess the data to be ready for a model. The workflow is then saved to gcs, reloaded and used for a two tower Merlin Model. 
 
-3. [`02-build-model`](02-build-model.ipynb) this reads the tfrecords created from Dataflow and constructs a Tensorflow Recommender model for training on a single machine. Note settings tuned for a `high-gpu` single machine, single A100 gpu and may require different batch sizes for different configurations. Note many of the configurations were found by querying distinct counts for hashing functions and average/variance queries to get the settings for normalization.
+3. [`02-matching-engine`](02-matching-engine.ipynb) the created model artifacts and embedding files are used to create matching engine endpoints and model endpoints (for the query model). The final call is an end-to-end example of making a recommendation by combining these two endpoint resources.
+
+4. [`03-create-test-instances`](03-create-test-instances.ipynb) here we take example songs and test out the recommender. 
 
 ## Creating a Google Cloud project
 
