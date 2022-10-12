@@ -109,7 +109,7 @@ parsed_candidate_dataset = candidate_dataset.interleave(
 ).map(
     parse_candidate_tfrecord_fn,
     num_parallel_calls=tf.data.AUTOTUNE,
-).with_options(options)
+).with_options(options).cache()
 
 
 client = storage.Client()
@@ -656,7 +656,7 @@ class Candidate_Track_Model(tf.keras.Model):
                 tf.reshape(self.track_pop_can_normalized(data["track_pop_can"]), (-1, 1)),  
                 tf.reshape(self.artist_pop_can_normalized(data["artist_pop_can"]), (-1, 1)),  
                 tf.reshape(self.artist_followers_can_normalized(data["artist_followers_can"]), (-1, 1)),  
-                self.artist_genres_can_text_embedding(data['album_uri_can']),  
+                self.artist_genres_can_text_embedding(data['artist_genres_can']),  
             ], axis=1
         )
         
@@ -673,25 +673,22 @@ class TheTwoTowers(tfrs.models.Model):
 
     def __init__(self, layer_sizes ):
         super().__init__()
-        
-        self.query_tower = Playlist_Model(layer_sizes)
-        
-        self.candidate_tower = Candidate_Track_Model(layer_sizes)
-        
-        self.task = tfrs.tasks.Retrieval(
-            metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(512).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(
-    tf.data.AUTOTUNE,
-)
-            )
-        )
+        with tf.device('/GPU:0'):
+            self.query_tower = Playlist_Model(layer_sizes)
+
+            self.candidate_tower = Candidate_Track_Model(layer_sizes)
+
+            self.task = tfrs.tasks.Retrieval(
+                metrics=tfrs.metrics.FactorizedTopK(
+                    candidates=parsed_candidate_dataset.batch(512).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)))
         
     def compute_loss(self, data, training=False):
-        query_embeddings = self.query_tower(data)
-        candidate_embeddings = self.candidate_tower(data)
+        with tf.device('/GPU:0'):
+            query_embeddings = self.query_tower(data)
+            candidate_embeddings = self.candidate_tower(data)
 
-        return self.task(
-            query_embeddings, 
-            candidate_embeddings, 
-            compute_metrics=not training
-        ) # turn off metrics to save time on training
+            return self.task(
+                query_embeddings, 
+                candidate_embeddings, 
+                compute_metrics=not training
+            ) # turn off metrics to save time on training
