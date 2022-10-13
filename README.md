@@ -60,6 +60,34 @@ To run the notebooks successfully, follow the steps below.
 
 - Authorize the Cloud Shell if it prompts you to. Please note that this step may take a few minutes. You can navigate to the [Pub/Sub console](https://console.cloud.google.com/cloudpubsub/subscription/) to verify the subscriptions. 
 
+#### Step 1a: Setup a VPC Peering network for Matching Engine
+
+- In GCP Console run the following commands - set your peering network name
+
+```
+PROJECT_ID = "YOURPROJECT" 
+NETWORK_NAME = "ucaip-haystack-vpc-network"  
+PEERING_RANGE_NAME = "ucaip-haystack-range"
+
+# # Create a VPC network
+gcloud compute networks create {NETWORK_NAME} --bgp-routing-mode=regional --subnet-mode=auto --project={PROJECT_ID}
+
+# # Add necessary firewall rules
+gcloud compute firewall-rules create {NETWORK_NAME}-allow-icmp --network {NETWORK_NAME} --priority 65534 --project {PROJECT_ID} --allow icmp
+
+gcloud compute firewall-rules create {NETWORK_NAME}-allow-internal --network {NETWORK_NAME} --priority 65534 --project {PROJECT_ID} --allow all --source-ranges 10.128.0.0/9
+
+gcloud compute firewall-rules create {NETWORK_NAME}-allow-rdp --network {NETWORK_NAME} --priority 65534 --project {PROJECT_ID} --allow tcp:3389
+
+gcloud compute firewall-rules create {NETWORK_NAME}-allow-ssh --network {NETWORK_NAME} --priority 65534 --project {PROJECT_ID} --allow tcp:22
+
+# # Reserve IP range
+gcloud compute addresses create {PEERING_RANGE_NAME} --global --prefix-length=16 --network={NETWORK_NAME} --purpose=VPC_PEERING --project={PROJECT_ID} --description="peering range for uCAIP Haystack."
+
+# Set up peering with service networking
+gcloud services vpc-peerings connect --service=servicenetworking.googleapis.com --network=${NETWORK_NAME} --ranges=${PEERING_RANGE_NAME} --project=${PROJECT_ID}
+```
+
 #### Step 2: Create a User-Managed Notebook instance on Vertex AI Workbench
 
 
