@@ -1,6 +1,6 @@
 #!bin/bash
 
-sudo apt install cmake libncurses5-dev libncursesw5-dev git
+apt install cmake libncurses5-dev libncursesw5-dev git
 git clone https://github.com/Syllo/nvtop.git
 mkdir -p nvtop/build && cd nvtop/build
 cmake ..
@@ -10,4 +10,4 @@ cmake ..
 # cmake ..-DNVML_RETRIEVE_HEADER_ONLINE=True
 
 make
-sudo make install #Need root privileges, if you report a privilege error, please add sudo
+make install #Need root privileges, if you report a privilege error, please add sudo
