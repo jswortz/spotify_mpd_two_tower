@@ -13,8 +13,8 @@ MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
 EMBEDDING_DIM = 128
 PROJECTION_DIM = 100
 SEED = 1234
-USE_CROSS_LAYER=True
-DROPOUT=True
+USE_CROSS_LAYER=False
+DROPOUT=False
 DROPOUT_RATE=0.33
 
 client = storage.Client()
@@ -418,14 +418,6 @@ class Playlist_Model(tf.keras.Model):
                     kernel_initializer=initializer
                 )
             )
-        ### ADDING L2 NORM AT THE END
-        self.dense_layers.add(
-            tf.keras.layers.Lambda(
-                lambda x: tf.nn.l2_normalize(
-                    x, 1, epsilon=1e-12, name="normalize_dense"
-                )
-            )
-        )
         
     # ========================================
     # call
@@ -680,7 +672,7 @@ class TheTwoTowers(tfrs.models.Model):
 
             self.task = tfrs.tasks.Retrieval(
                 metrics=tfrs.metrics.FactorizedTopK(
-                    candidates=parsed_candidate_dataset.batch(512).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)))
+                    candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)))
         
     def compute_loss(self, data, training=False):
         with tf.device('/GPU:0'):
