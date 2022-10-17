@@ -10,7 +10,7 @@ import pickle as pkl
 from pprint import pprint
 
 MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
-EMBEDDING_DIM = 128
+EMBEDDING_DIM = 512
 PROJECTION_DIM = 100
 SEED = 1234
 USE_CROSS_LAYER=False
@@ -467,9 +467,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: artist_name_can
         self.artist_name_can_text_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=287710),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1,
+                    input_dim=287710+1,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
                     name="artist_name_can_emb_layer",
@@ -481,9 +481,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: track_name_can
         self.track_name_can_text_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=1483753),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1,
+                    input_dim=1483753+1,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
                     name="track_name_can_emb_layer",
@@ -495,9 +495,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: album_name_can
         self.album_name_can_text_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=571625),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1,
+                    input_dim=571625+1,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
                     name="album_name_can_emb_layer",
@@ -509,9 +509,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: artist_uri_can
         self.artist_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=295860),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1, 
+                    input_dim=295860+1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_uri_can_emb_layer",
                     input_shape=()
@@ -580,9 +580,9 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: artist_genres_can
         self.artist_genres_can_text_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=200_000),
+                tf.keras.layers.Hashing(num_bins=734684),
                 tf.keras.layers.Embedding(
-                    input_dim=200_000+1,
+                    input_dim=734684+1,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
                     name="artist_genres_can_emb_layer",
@@ -665,22 +665,21 @@ class TheTwoTowers(tfrs.models.Model):
 
     def __init__(self, layer_sizes ):
         super().__init__()
-        with tf.device('/GPU:0'):
-            self.query_tower = Playlist_Model(layer_sizes)
+        self.query_tower = Playlist_Model(layer_sizes)
 
-            self.candidate_tower = Candidate_Track_Model(layer_sizes)
+        self.candidate_tower = Candidate_Track_Model(layer_sizes)
 
-            self.task = tfrs.tasks.Retrieval(
-                metrics=tfrs.metrics.FactorizedTopK(
-                    candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)))
+        self.task = tfrs.tasks.Retrieval(
+            metrics=tfrs.metrics.FactorizedTopK(
+                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower)))#, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)
+                
         
     def compute_loss(self, data, training=False):
-        with tf.device('/GPU:0'):
-            query_embeddings = self.query_tower(data)
-            candidate_embeddings = self.candidate_tower(data)
+        query_embeddings = self.query_tower(data)
+        candidate_embeddings = self.candidate_tower(data)
 
-            return self.task(
-                query_embeddings, 
-                candidate_embeddings, 
-                compute_metrics=not training
-            ) # turn off metrics to save time on training
+        return self.task(
+            query_embeddings, 
+            candidate_embeddings, 
+            compute_metrics=False
+        ) # turn off metrics to save time on training
