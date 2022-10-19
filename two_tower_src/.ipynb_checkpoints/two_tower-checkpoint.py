@@ -10,7 +10,7 @@ import pickle as pkl
 from pprint import pprint
 
 MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
-EMBEDDING_DIM = 512
+EMBEDDING_DIM = 128
 PROJECTION_DIM = 100
 SEED = 1234
 USE_CROSS_LAYER=False
@@ -19,6 +19,27 @@ DROPOUT_RATE=0.33
 MAX_TOKENS=50000
 
 client = storage.Client()
+
+def upload_blob(bucket_name, source_file_name, destination_blob_name):
+    """Uploads a file to the bucket."""
+    # The ID of your GCS bucket
+    # bucket_name = "your-bucket-name"
+    # The path to your file to upload
+    # source_file_name = "local/path/to/file"
+    # The ID of your GCS object
+    # destination_blob_name = "storage-object-name"
+    # bucket_name = bucket_name.strip("gs://")
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+
+    blob.upload_from_filename(source_file_name)
+
+    print(
+        f"File {source_file_name} uploaded to {destination_blob_name}."
+    )
+
+
 candidate_features = {
     'track_name_can': tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     'artist_name_can': tf.io.FixedLenFeature(dtype=tf.string, shape=()),
@@ -115,11 +136,15 @@ parsed_candidate_dataset = candidate_dataset.interleave(
 
 client = storage.Client()
 def get_buckets_20(MAX_VAL):
-        return(list(np.linspace(
-            1, 
-            MAX_VAL, 
-            num=20
-            )))
+    """ This helper funciton
+        creates discretization buckets of size 20
+        MAX_VAL: the max value of the tensor to be discritized
+        (Assuming 1 is min value)
+    """
+    list_buckets = list(np.linspace(1, MAX_VAL, num=20))
+    return(list_buckets)
+    
+    
 class Playlist_Model(tf.keras.Model):
     def __init__(self, layer_sizes):
         super().__init__()
@@ -146,8 +171,6 @@ class Playlist_Model(tf.keras.Model):
         )
         
         # Feature: collaborative
-#         collaborative_vocab = np.array([b'false', b'true'])
-        
         self.pl_collaborative_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Hashing(num_bins=3),
@@ -185,14 +208,14 @@ class Playlist_Model(tf.keras.Model):
             [
                 tf.keras.layers.TextVectorization(max_tokens=MAX_TOKENS, 
                                                   ngrams=2, name="artist_name_pl_textvectorizor"),
-
                 tf.keras.layers.Embedding(
                     input_dim=MAX_TOKENS + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_name_pl_emb_layer",
                     
                 ),
-                tf.keras.layers.GlobalAveragePooling1D(name="artist_name_pl_1d"),
+                tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
+                tf.keras.layers.GlobalAveragePooling2D(name="artist_name_pl_2d"),
             ], name="artist_name_pl_emb_model"
         )
         
@@ -220,14 +243,14 @@ class Playlist_Model(tf.keras.Model):
                     output_dim=EMBEDDING_DIM,
                     name="track_name_pl_emb_layer",
                 ),
-                tf.keras.layers.GlobalAveragePooling1D(name="track_name_pl_1d"),
+                tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
+                tf.keras.layers.GlobalAveragePooling2D(name="track_name_pl_2d"),
             ], name="track_name_pl_emb_model"
         )
         
     
         self.duration_ms_songs_pl_embedding = tf.keras.Sequential(
             [
-                # tf.keras.layers.Flatten(),
                 tf.keras.layers.Discretization(get_buckets_20(20744575)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
@@ -248,7 +271,8 @@ class Playlist_Model(tf.keras.Model):
                     output_dim=EMBEDDING_DIM,
                     name="album_name_pl_emb_layer",
                 ),
-                tf.keras.layers.GlobalAveragePooling1D(name="album_name_pl_emb_layer_1d"),
+                tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
+                tf.keras.layers.GlobalAveragePooling2D(name="album_name_pl_emb_layer_2d"),
             ], name="album_name_pl_emb_model"
         )
         
@@ -300,7 +324,8 @@ class Playlist_Model(tf.keras.Model):
                     output_dim=EMBEDDING_DIM,
                     name="artist_genres_pl_emb_layer",
                 ),
-                tf.keras.layers.GlobalAveragePooling1D(name="artist_genres_pl_1d"),
+                tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
+                tf.keras.layers.GlobalAveragePooling2D(name="artist_genres_pl_2d"),
             ], name="artist_genres_pl_emb_model"
         )
         
@@ -320,7 +345,6 @@ class Playlist_Model(tf.keras.Model):
             
         # Dense Layers
         self.dense_layers = tf.keras.Sequential(name="pl_dense_layers")
-        initializer = tf.keras.initializers.GlorotUniform(seed=SEED)
         
         # Use the ReLU activation for all but the last layer.
         for layer_size in layer_sizes[:-1]:
@@ -328,7 +352,7 @@ class Playlist_Model(tf.keras.Model):
                 tf.keras.layers.Dense(
                     layer_size, 
                     activation="relu", 
-                    kernel_initializer=initializer,
+                    kernel_initializer=tf.keras.initializers.GlorotUniform(seed=SEED),
                 )
             )
             if DROPOUT:
@@ -339,7 +363,7 @@ class Playlist_Model(tf.keras.Model):
             self.dense_layers.add(
                 tf.keras.layers.Dense(
                     layer_size, 
-                    kernel_initializer=initializer
+                    kernel_initializer=tf.keras.initializers.GlorotUniform(seed=SEED)
                 )
             )
         
@@ -359,15 +383,15 @@ class Playlist_Model(tf.keras.Model):
                 self.pl_track_uri_embedding(data["track_uri_can"]),
                 
                 # sequence features
-                self.artist_name_pl_embedding(data["artist_name_pl"]),
+                self.artist_name_pl_embedding(tf.reshape(data['artist_name_pl'], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 self.track_uri_pl_embedding(data["track_uri_pl"]),
-                self.track_name_pl_embedding(data["track_name_pl"]),
+                self.track_name_pl_embedding(tf.reshape(data['track_name_pl'], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 self.duration_ms_songs_pl_embedding(data["duration_ms_songs_pl"]),
-                self.album_name_pl_embedding(data["album_name_pl"]),
+                self.album_name_pl_embedding(tf.reshape(data['album_name_pl'], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 self.artist_pop_pl_embedding(data["artist_pop_pl"]),
                 self.artists_followers_pl_embedding(data["artists_followers_pl"]),
                 self.track_pop_pl_embedding(data["track_pop_pl"]),
-                self.artist_genres_pl_embedding(data["artist_genres_pl"]),
+                self.artist_genres_pl_embedding(tf.reshape(data['artist_genres_pl'], [-1, MAX_PLAYLIST_LENGTH, 1])),
             ], axis=1)
         
         # Build Cross Network
@@ -406,8 +430,9 @@ class Candidate_Track_Model(tf.keras.Model):
                     input_dim=MAX_TOKENS+1,
                     output_dim=EMBEDDING_DIM,
                     name="track_name_can_emb_layer",
+                    mask_zero=True
                 ),
-                tf.keras.layers.GlobalAveragePooling1D(),
+                tf.keras.layers.GlobalAveragePooling1D(name="track_name_can_1d"),
             ], name="track_name_can_emb_model"
         )
         
@@ -420,8 +445,9 @@ class Candidate_Track_Model(tf.keras.Model):
                     input_dim=MAX_TOKENS+1,
                     output_dim=EMBEDDING_DIM,
                     name="album_name_can_emb_layer",
+                    mask_zero=True
                 ),
-                tf.keras.layers.GlobalAveragePooling1D()
+                tf.keras.layers.GlobalAveragePooling1D(name="album_name_can_1d"),
             ], name="album_name_can_emb_model"
         )
         
@@ -473,6 +499,7 @@ class Candidate_Track_Model(tf.keras.Model):
             ], name="duration_ms_can_emb_model"
         )
         
+        # Feature: artist_pop_can
         self.artist_pop_can_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Discretization(get_buckets_20(100)),
@@ -484,6 +511,7 @@ class Candidate_Track_Model(tf.keras.Model):
             ], name="artist_pop_can_emb_model"
         )
         
+        # Feature: artist_followers_can
         self.artists_followers_can_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Discretization(get_buckets_20(100)),
@@ -496,7 +524,6 @@ class Candidate_Track_Model(tf.keras.Model):
         )
         
         # Feature: track_pop_can
-
         self.track_pop_can_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Discretization(get_buckets_20(100)),
@@ -517,8 +544,9 @@ class Candidate_Track_Model(tf.keras.Model):
                     input_dim=MAX_TOKENS + 1, 
                     output_dim=EMBEDDING_DIM,
                     name="artist_genres_can_emb_layer",
+                    mask_zero=True
                 ),
-                tf.keras.layers.GlobalAveragePooling1D()
+                tf.keras.layers.GlobalAveragePooling1D(name="artist_genres_can_1d"),
             ], name="artist_genres_can_emb_model"
         )
         
@@ -539,7 +567,6 @@ class Candidate_Track_Model(tf.keras.Model):
         
         # Dense Layer
         self.dense_layers = tf.keras.Sequential(name="candidate_dense_layers")
-        initializer = tf.keras.initializers.GlorotUniform(seed=SEED)
         
         # Use the ReLU activation for all but the last layer.
         for layer_size in layer_sizes[:-1]:
@@ -547,7 +574,7 @@ class Candidate_Track_Model(tf.keras.Model):
                 tf.keras.layers.Dense(
                     layer_size, 
                     activation="relu", 
-                    kernel_initializer=initializer,
+                    kernel_initializer=tf.keras.initializers.GlorotUniform(seed=SEED),
                 )
             )
             if DROPOUT:
@@ -558,7 +585,7 @@ class Candidate_Track_Model(tf.keras.Model):
             self.dense_layers.add(
                 tf.keras.layers.Dense(
                     layer_size, 
-                    kernel_initializer=initializer
+                    kernel_initializer=tf.keras.initializers.GlorotUniform(seed=SEED)
                 )
             )
             
@@ -567,7 +594,6 @@ class Candidate_Track_Model(tf.keras.Model):
     # ========================================
             
     def call(self, data):
-        
         all_embs = tf.concat(
             [
                 self.artist_name_can_text_embedding(data['artist_name_can']),  
@@ -603,7 +629,7 @@ class TheTwoTowers(tfrs.models.Model):
 
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower)))#, num_parallel_calls=tf.data.AUTOTUNE).prefetch(tf.data.AUTOTUNE,)
+                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower)))
                 
         
     def compute_loss(self, data, training=False):
@@ -613,5 +639,5 @@ class TheTwoTowers(tfrs.models.Model):
         return self.task(
             query_embeddings, 
             candidate_embeddings, 
-            compute_metrics=False
+            compute_metrics=not training
         ) # turn off metrics to save time on training
