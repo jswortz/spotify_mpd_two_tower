@@ -655,7 +655,7 @@ class TheTwoTowers(tfrs.models.Model):
 
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(128).map(self.candidate_tower)))
+                candidates=parsed_candidate_dataset.batch(1028).map(self.candidate_tower)))
                 
         
     def compute_loss(self, data, training=False):
