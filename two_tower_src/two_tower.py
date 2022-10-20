@@ -111,11 +111,11 @@ def parse_candidate_tfrecord_fn(example):
 
 
 BUCKET = 'spotify-beam-v3'
-CANDIDATE_PREFIX = 'v1/candidates/'
+CANDIDATE_PREFIX = 'v1/'
 
 candidate_files = []
-# for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimiter="/"):
-candidate_files.append('candidates-00000-of-00001.tfrecords')
+for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimiter="/"):
+    candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
 #generate the candidate dataset
 

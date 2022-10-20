@@ -111,11 +111,11 @@ def parse_candidate_tfrecord_fn(example):
 
 
 BUCKET = 'spotify-beam-v3'
-CANDIDATE_PREFIX = 'v1/candidates/'
+CANDIDATE_PREFIX = 'v1/'
 
 candidate_files = []
-# for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimiter="/"):
-candidate_files.append('candidates-00000-of-00001.tfrecords')
+for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}', delimiter="/"):
+    candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
 #generate the candidate dataset
 
@@ -651,11 +651,11 @@ class TheTwoTowers(tfrs.models.Model):
         self.candidate_tower = Candidate_Track_Model(layer_sizes)
         
         self.__metrics = tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(2048).map(self.candidate_tower))
+                candidates=parsed_candidate_dataset.batch(256).map(self.candidate_tower))
         self.__metrics.reset_states()
         self.task = tfrs.tasks.Retrieval(
                     metrics=self.__metrics,
-                    num_hard_negatives=100, #number of candidates to consider sorted by max logits
+                    num_hard_negatives=50, #number of candidates to consider sorted by max logits
                     # remove_accidental_hits=True, #remove the candidate from the negative samples if it accidentally is in the list
                     name="two_tower_retreival_task")
                 
