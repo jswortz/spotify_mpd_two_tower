@@ -3,7 +3,7 @@ from datetime import datetime
 PROJECT_ID = 'hybrid-vertex'
 BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
 REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v3'
+VERSION = 'v1'
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')

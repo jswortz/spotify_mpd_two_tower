@@ -85,7 +85,7 @@ def run(args):
     write_to_tf_record = beam.io.WriteToTFRecord(
         file_path_prefix = CANDIDATE_SINK, 
         file_name_suffix=".tfrecords",
-        num_shards=NUM_TF_RECORDS
+        num_shards=1 #hardcoding due to smaller size
     )
 
     with beam.Pipeline(RUNNER, options=pipeline_options) as pipeline:
