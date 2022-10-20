@@ -651,11 +651,11 @@ class TheTwoTowers(tfrs.models.Model):
         self.candidate_tower = Candidate_Track_Model(layer_sizes)
         
         self.__metrics = tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(2048).map(self.candidate_tower))
+                candidates=parsed_candidate_dataset.batch(256).map(self.candidate_tower))
         self.__metrics.reset_states()
         self.task = tfrs.tasks.Retrieval(
                     metrics=self.__metrics,
-                    num_hard_negatives=100, #number of candidates to consider sorted by max logits
+                    num_hard_negatives=50, #number of candidates to consider sorted by max logits
                     # remove_accidental_hits=True, #remove the candidate from the negative samples if it accidentally is in the list
                     name="two_tower_retreival_task")
                 
