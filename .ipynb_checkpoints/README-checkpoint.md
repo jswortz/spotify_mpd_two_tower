@@ -12,9 +12,11 @@ The end to end example (with public data) follows this architecture:
 
 2. [`01-recommender-vertex-merlin`](01-recommender-vertex-merlin.ipynb) this reads data from the BQ training and validation tables and converts records to parquet in GCS. NVtabular is used to encode and preprocess the data to be ready for a model. The workflow is then saved to gcs, reloaded and used for a two tower Merlin Model. 
 
-3. [`02-matching-engine`](02-matching-engine.ipynb) the created model artifacts and embedding files are used to create matching engine endpoints and model endpoints (for the query model). The final call is an end-to-end example of making a recommendation by combining these two endpoint resources.
+3. [`02-build-custom-query-predictor`](02-build-custom-query-predictor) creates a custom Vertex AI endpoint that encapsulates the query model created from the 01 notebook.
 
-4. [`03-create-test-instances`](03-create-test-instances.ipynb) here we take example songs and test out the recommender. 
+4. [`03-matching-engine`](03-matching-engine.ipynb) the created model artifacts and embedding files are used to create matching engine endpoints and model endpoints (for the query model). The final call is an end-to-end example of making a recommendation by combining these two endpoint resources.
+
+5. [`04-create-test-instances`](04-create-test-instances.ipynb) here we take example songs and test out the recommender. 
 
 ## Creating a Google Cloud project
 
