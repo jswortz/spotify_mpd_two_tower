@@ -12,9 +12,9 @@ from pprint import pprint
 
 MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
 EMBEDDING_DIM = 128
-PROJECTION_DIM = 100
+PROJECTION_DIM = 10
 SEED = 1234
-USE_CROSS_LAYER=False
+USE_CROSS_LAYER=True
 DROPOUT=False
 DROPOUT_RATE=0.33
 MAX_TOKENS=50000
@@ -383,7 +383,9 @@ class Playlist_Model(tf.keras.Model):
             )
             
         ### ADDING L2 NORM AT THE END
-        self.dense_layers.add(tf.keras.layers.Lambda(lambda x: tf.nn.l2_normalize(x, 1, epsilon=1e-12, name="normalize_dense")))
+        # self.dense_layers.add(tf.keras.layers.Lambda(lambda x: tf.nn.l2_normalize(x, 1, epsilon=1e-12, name="normalize_dense")))
+        # self.dense_layers.add(tf.keras.layers.Lambda(lambda x: tf.math.l2_normalize(x,0, epsilon=1e-12, name="normalize_dense")))
+        self.dense_layers.add(tf.keras.layers.LayerNormalization(name="normalize_dense"))
         
     # ========================================
     # call
@@ -609,7 +611,8 @@ class Candidate_Track_Model(tf.keras.Model):
                 )
             )
         ### ADDING L2 NORM AT THE END
-        self.dense_layers.add(tf.keras.layers.Lambda(lambda x: tf.nn.l2_normalize(x, 1, epsilon=1e-12, name="normalize_dense")))
+        self.dense_layers.add(tf.keras.layers.LayerNormalization(name="normalize_dense"))
+        
             
     # ========================================
     # Call Function
@@ -649,25 +652,27 @@ class TheTwoTowers(tfrs.models.Model):
         self.query_tower = Playlist_Model(layer_sizes)
 
         self.candidate_tower = Candidate_Track_Model(layer_sizes)
-        
-        self.__metrics = tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(256).map(self.candidate_tower))
-        self.__metrics.reset_states()
+
         self.task = tfrs.tasks.Retrieval(
-                    metrics=self.__metrics,
-                    num_hard_negatives=50, #number of candidates to consider sorted by max logits
-                    # remove_accidental_hits=True, #remove the candidate from the negative samples if it accidentally is in the list
+                    metrics=tfrs.metrics.FactorizedTopK(candidates=parsed_candidate_dataset
+                                                        .batch(128)
+                                                        .cache()
+                                                        .map(lambda x: (x['track_uri_can'], self.candidate_tower(x)))
+                                                        , ks=(1, 5, 10)), 
+                    batch_metrics=[tf.keras.metrics.TopKCategoricalAccuracy(1, name='batch_categorical_accuracy_at_1'), 
+                                   tf.keras.metrics.TopKCategoricalAccuracy(5, name='batch_categorical_accuracy_at_5')], 
+                    remove_accidental_hits=True,
                     name="two_tower_retreival_task")
-                
-        
+                     
     def compute_loss(self, data, training=False):
         query_embeddings = self.query_tower(data)
         candidate_embeddings = self.candidate_tower(data)
-
         return self.task(
             query_embeddings, 
             candidate_embeddings, 
-            compute_metrics=not training
+            compute_metrics=False,
+            candidate_ids=data['track_uri_can'],
+            compute_batch_metrics=True
         ) # turn off metrics to save time on training
     
 ###APPENDIX HELPER DIAGNOSTIC FUNCTIONS FOR NULLS:
