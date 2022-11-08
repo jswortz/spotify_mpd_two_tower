@@ -661,7 +661,7 @@ class TheTwoTowers(tfrs.models.Model):
                                                         , ks=(1, 5, 10)), 
                     batch_metrics=[tf.keras.metrics.TopKCategoricalAccuracy(1, name='batch_categorical_accuracy_at_1'), 
                                    tf.keras.metrics.TopKCategoricalAccuracy(5, name='batch_categorical_accuracy_at_5')], 
-                    remove_accidental_hits=True,
+                    remove_accidental_hits=False,
                     name="two_tower_retreival_task")
                      
     def compute_loss(self, data, training=False):
@@ -672,7 +672,7 @@ class TheTwoTowers(tfrs.models.Model):
             candidate_embeddings, 
             compute_metrics=False,
             candidate_ids=data['track_uri_can'],
-            compute_batch_metrics=True
+            compute_batch_metrics=False
         ) # turn off metrics to save time on training
     
 ###APPENDIX HELPER DIAGNOSTIC FUNCTIONS FOR NULLS:
