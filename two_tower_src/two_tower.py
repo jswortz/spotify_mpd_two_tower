@@ -12,7 +12,7 @@ from pprint import pprint
 
 MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
 EMBEDDING_DIM = 128
-PROJECTION_DIM = 10
+PROJECTION_DIM = 50
 SEED = 1234
 USE_CROSS_LAYER=True
 DROPOUT=False
@@ -667,10 +667,11 @@ class TheTwoTowers(tfrs.models.Model):
     def compute_loss(self, data, training=False):
         query_embeddings = self.query_tower(data)
         candidate_embeddings = self.candidate_tower(data)
+        
         return self.task(
             query_embeddings, 
             candidate_embeddings, 
-            compute_metrics=False,
+            compute_metrics=not training,
             candidate_ids=data['track_uri_can'],
             compute_batch_metrics=False
         ) # turn off metrics to save time on training

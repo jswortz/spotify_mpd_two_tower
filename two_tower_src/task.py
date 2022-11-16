@@ -35,7 +35,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("train_dir", 'spotify-beam-v3', "bucket where tfrecords live")
 flags.DEFINE_string("train_dir_prefix", 'v1/train_last_5/','path to training data in train_dir')
 flags.DEFINE_string("valid_dir_prefix", 'v1/valid_last_5/','path to validation data in train_dir')
-flags.DEFINE_string("EXPERIMENT_NAME", 'spotify-single-node-train-full-data-v8-01','vertex ai experiment name')
+flags.DEFINE_string("EXPERIMENT_NAME", None,'vertex ai experiment name')
 
 
 flags.DEFINE_string("OUTPUT_PATH", 'gs://two-tower-models','location saved models and embeddings')
@@ -46,12 +46,15 @@ flags.DEFINE_float("LR", 0.1, "Learning Rate")
 flags.DEFINE_bool("DROPOUT", False, "Use Dropout - T/F bool type")
 flags.DEFINE_float("DROPOUT_RATE", 0.4, "Dropout rate only works with DROPOUT=True")
 flags.DEFINE_integer("EMBEDDING_DIM", 128, "Embedding dimension")
-flags.DEFINE_string("ARCH", '[512,256]', "deep architecture, expressed as a list of ints in string format - will be parsed into list")
+flags.DEFINE_string("ARCH", None, "deep architecture, expressed as a list of ints in string format - will be parsed into list")
 
-flags.DEFINE_integer("NUM_EPOCHS", 1, "Number of epochs")
-flags.DEFINE_integer("BATCH_SIZE", 1024, "batch size")
+flags.DEFINE_integer("NUM_EPOCHS", None, "Number of epochs")
+flags.DEFINE_integer("BATCH_SIZE", None, "batch size")
 
 flags.DEFINE_integer("MAX_TOKENS", 50000, "Max embeddings for query and last_n products")
+flags.DEFINE_string("PROJECT_ID", "hybrid-vertex", "Project ID")
+flags.DEFINE_string("LOCATION", "us-central1", "GCP Location")
+
 
 ##########################
 ##########################
@@ -61,6 +64,8 @@ flags.DEFINE_integer("MAX_TOKENS", 50000, "Max embeddings for query and last_n p
 ##########################
 
 # create a tf function to convert any bad null values
+TB_RESOURCE_NAME = 'projects/934903580331/locations/us-central1/tensorboards/7336372589079560192' #fqn - project number then tensorboard id
+
 def tf_if_null_return_zero(val):
     """
     this function fills in nans to zeros - sometimes happens in embedding calcs.
@@ -75,26 +80,7 @@ def get_arch_from_string(arch_string):
     return [int(x) for x in q.split(',')]
 
 
-def get_upload_logs_to_manged_tb_command(ttl_hrs, oneshot="false"):
-    """
-    Run this and copy/paste the command into terminal to have 
-    upload the tensorboard logs from this machine to the managed tb instance
-    Note that the log dir is at the granularity of the run to help select the proper
-    timestamped run in Tensorboard
-    You can also run this in one-shot mode after training is done 
-    to upload all tb objects at once
-    """
-    return(f"""tb-gcp-uploader --tensorboard_resource_name={TB_RESOURCE_NAME} \
-      --logdir={LOG_DIR} \
-      --experiment_name={EXPERIMENT_NAME} \
-      --one_shot={oneshot} \
-      --event_file_inactive_secs={60*60*ttl_hrs}""")
 
-# we are going to ecapsulate this one-shot log uploader via a custom callback:
-
-class UploadTBLogsBatchEnd(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        os.system(get_upload_logs_to_manged_tb_command(ttl_hrs = 5, oneshot="true"))
         
 ##########################
 ##########################
@@ -105,11 +91,12 @@ class UploadTBLogsBatchEnd(tf.keras.callbacks.Callback):
 
 def main(argv):
     
-    TB_RESOURCE_NAME = 'projects/934903580331/locations/us-central1/tensorboards/7336372589079560192' #fqn - project number then tensorboard id
+    
     invoke_time = time.strftime("%Y%m%d-%H%M%S")
     EXPERIMENT_NAME = FLAGS.EXPERIMENT_NAME
     RUN_NAME = EXPERIMENT_NAME+'run'+time.strftime("%Y%m%d-%H%M%S")
     
+
     path = FLAGS.OUTPUT_PATH
     LOG_DIR = path+"/tb-logs/"+EXPERIMENT_NAME
 
@@ -122,6 +109,9 @@ def main(argv):
 
     client = storage.Client()
     from google.cloud import aiplatform as vertex_ai
+    vertex_ai.init(project=FLAGS.PROJECT_ID,
+                   location=FLAGS.LOCATION,
+                   experiment=EXPERIMENT_NAME)
 
 
     options = tf.data.Options()
@@ -189,6 +179,27 @@ def main(argv):
     LR = FLAGS.LR
     opt = tf.keras.optimizers.Adagrad(LR)
     model.compile(optimizer=opt)
+    
+    def get_upload_logs_to_manged_tb_command(ttl_hrs, oneshot="false"):
+        """
+        Run this and copy/paste the command into terminal to have 
+        upload the tensorboard logs from this machine to the managed tb instance
+        Note that the log dir is at the granularity of the run to help select the proper
+        timestamped run in Tensorboard
+        You can also run this in one-shot mode after training is done 
+        to upload all tb objects at once
+        """
+        return(f"""tb-gcp-uploader --tensorboard_resource_name={TB_RESOURCE_NAME} \
+          --logdir={LOG_DIR} \
+          --experiment_name={EXPERIMENT_NAME} \
+          --one_shot={oneshot} \
+          --event_file_inactive_secs={60*60*ttl_hrs}""")
+    
+    # we are going to ecapsulate this one-shot log uploader via a custom callback:
+
+    class UploadTBLogsBatchEnd(tf.keras.callbacks.Callback):
+        def on_epoch_end(self, epoch, logs=None):
+            os.system(get_upload_logs_to_manged_tb_command(ttl_hrs = 5, oneshot="true"))
 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
             log_dir=LOG_DIR,
@@ -228,12 +239,11 @@ def main(argv):
     val_keys = [v for v in layer_history.history.keys()]
     runtime_mins = int((end_time - start_time) / 60)
 
-
+    
     vertex_ai.start_run(RUN_NAME, tensorboard=TB_RESOURCE_NAME)
 
     vertex_ai.log_params({"layers": str(layer_sizes), 
-                          "learning_rate": LR,
-                            "num_epochs": epochs,
+                            "num_epochs": NUM_EPOCHS,
                             "batch_size": batch_size,
                          })
 
