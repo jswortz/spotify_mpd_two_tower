@@ -47,17 +47,32 @@ class candidates_to_tfexample(beam.DoFn):
         example = tf.train.Example(
             features=tf.train.Features(
                 feature = {
-                    "track_name_can": _string_array(data['track_name_can']),
-                    "artist_name_can": _string_array(data['artist_name_can']),
-                    "album_name_can": _string_array(data['album_name_can']),
                     "track_uri_can": _string_array(data['track_uri_can']),
+                    "track_name_can": _string_array(data['track_name_can']),
                     "artist_uri_can": _string_array(data['artist_uri_can']),
+                    "artist_name_can": _string_array(data['artist_name_can']),
                     "album_uri_can": _string_array(data['album_uri_can']),
-                    "duration_ms_can": _float_feature(data['duration_ms_can']),     # TODO: likely to change to float
-                    "track_pop_can": _float_feature(data['track_pop_can']),         # TODO: likely to change to float
+                    "album_name_can": _string_array(data['album_name_can']),
+                    "duration_ms_can": _float_feature(data['duration_ms_can']),   
+                    "track_pop_can": _float_feature(data['track_pop_can']),         
                     "artist_pop_can": _float_feature(data['artist_pop_can']),
                     "artist_genres_can": _string_array(data['artist_genres_can']),
                     "artist_followers_can": _float_feature(data['artist_followers_can']),
+                    # new
+                    # "track_pl_titles_can": _string_array(data['track_pl_titles_can']),
+                    "track_danceability_can": _float_feature(data['track_danceability_can']),
+                    "track_energy_can": _float_feature(data['track_energy_can']),
+                    "track_key_can": _string_array(data['track_key_can']),
+                    "track_loudness_can": _float_feature(data['track_loudness_can']),
+                    "track_mode_can": _string_array(data['track_mode_can']),
+                    "track_speechiness_can": _float_feature(data['track_speechiness_can']),
+                    "track_acousticness_can": _float_feature(data['track_acousticness_can']),
+                    "track_instrumentalness_can": _float_feature(data['track_instrumentalness_can']),
+                    "track_liveness_can": _float_feature(data['track_liveness_can']),
+                    "track_valence_can": _float_feature(data['track_valence_can']),
+                    "track_tempo_can": _float_feature(data['track_tempo_can']),
+                    "track_time_signature_can": _string_array(data['track_time_signature_can']),
+
                 }
             )
         )

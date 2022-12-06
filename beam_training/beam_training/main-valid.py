@@ -1,9 +1,9 @@
 from datetime import datetime
 # setup
 PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
+BUCKET_NAME = 'spotify-data-regimes' # 'spotify-tfrecords-blog' # Set your Bucket name
 REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v3'
+VERSION = sys.argv[5]
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
@@ -13,8 +13,8 @@ RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
 # Source data
-BQ_TABLE = 'train_flatten_valid'
-BQ_DATASET = 'mdp_eda_test'
+BQ_TABLE = 'train_flatten_valid_last_5_feats_v3'
+BQ_DATASET = 'a_spotify_ds_1m'
 TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage
@@ -29,7 +29,7 @@ CANDIDATE_DIR = ROOT + "/candidates/"
 
 QUERY = f"SELECT * FROM {PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}"
 
-NUM_TF_RECORDS = 8
+NUM_TF_RECORDS = 100
 
 args = {
     'job_name': JOB_NAME,

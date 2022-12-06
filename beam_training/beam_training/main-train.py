@@ -3,7 +3,7 @@ import sys
 
 # setup
 PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
+BUCKET_NAME = 'spotify-data-regimes' # 'spotify-tfrecords-blog' # Set your Bucket name
 REGION = 'us-central1' # Set the region for Dataflow jobs
 VERSION = sys.argv[5]
 
@@ -14,13 +14,13 @@ MAX_WORKERS = '20'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
-BQ_TABLE = 'train_flatten'
+BQ_TABLE = 'train_flatten_last_5_feats_v3'
 # Source data
 if len(sys.argv) > 1:
     BQ_TABLE = sys.argv[1]
 
 
-BQ_DATASET = 'mdp_eda_test'
+BQ_DATASET = 'a_spotify_ds_1m'
 TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage
@@ -40,8 +40,8 @@ QUERY = f"SELECT * FROM {PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}"
 # samples_per_file = 12_800 
 # NUM_TF_RECORDS = total_samples // samples_per_file
 
-total_mb_train = sys.argv[4]
-target_shard_size_mb = sys.argv[3]
+total_mb_train = sys.argv[4] # 1M
+target_shard_size_mb = sys.argv[3] #12,500 | or 80 shards
 
 NUM_TF_RECORDS = int(total_mb_train) // int(target_shard_size_mb)
 

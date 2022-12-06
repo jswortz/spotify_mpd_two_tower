@@ -1,9 +1,9 @@
 from datetime import datetime
 
 PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-beam-v3' # 'spotify-tfrecords-blog' # Set your Bucket name
-REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = 'v1'
+BUCKET_NAME = 'spotify-data-regimes'
+REGION = 'us-central1'
+VERSION = 'jtv5'
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
@@ -13,12 +13,12 @@ RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
 # Source data
-BQ_TABLE = 'candidates'
-BQ_DATASET = 'mdp_eda_test'
+BQ_TABLE = 'candidates_v4'
+BQ_DATASET = 'a_spotify_ds_1m'                       # BQ_DATASET = 'a_spotify_ds_1m_processed'
 TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage
-ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
+ROOT = f'gs://{BUCKET_NAME}/{VERSION}/candidates'
 
 DATA_DIR = ROOT + '/data' # Location to store data
 STATS_DIR = ROOT +'/stats/' # Location to store stats 
