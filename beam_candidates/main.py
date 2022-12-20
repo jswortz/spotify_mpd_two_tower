@@ -3,7 +3,7 @@ from datetime import datetime
 PROJECT_ID = 'hybrid-vertex'
 BUCKET_NAME = 'spotify-data-regimes'
 REGION = 'us-central1'
-VERSION = 'jtv5'
+VERSION = 'jtv8'
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
@@ -12,9 +12,9 @@ MAX_WORKERS = '20'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
-# Source data
-BQ_TABLE = 'candidates_v4'
-BQ_DATASET = 'a_spotify_ds_1m'                       # BQ_DATASET = 'a_spotify_ds_1m_processed'
+# Source data 
+BQ_TABLE = 'candidates_v8'
+BQ_DATASET = 'a_spotify_hack'                       # BQ_DATASET = 'a_spotify_ds_1m_processed'
 TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage

@@ -10,7 +10,7 @@ import pickle as pkl
 import os
 from pprint import pprint
 
-MAX_PLAYLIST_LENGTH = 6 # this is set upstream by the BigQuery max length
+MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
 EMBEDDING_DIM = 128
 PROJECTION_DIM = 50
 SEED = 1234
@@ -53,7 +53,7 @@ candidate_features = {
     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     # new
-    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
@@ -65,7 +65,7 @@ candidate_features = {
     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
 }
 
 feats = {
@@ -83,7 +83,7 @@ feats = {
     "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
@@ -95,52 +95,52 @@ feats = {
     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), #
+    "time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
     
     # ===================================================
     # summary playlist features
     # ===================================================
     "pl_name_src" : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
     'pl_collaborative_src' : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    'num_pl_followers_src' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
+    # 'num_pl_followers_src' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
     'pl_duration_ms_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     'num_pl_songs_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), # n_songs_pl_new | num_pl_songs_new
     'num_pl_artists_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     'num_pl_albums_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    'avg_track_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    'avg_artist_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    'avg_art_followers_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
+    # 'avg_track_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
+    # 'avg_artist_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
+    # 'avg_art_followers_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
     
     # ===================================================
     # ragged playlist features
     # ===================================================
     # bytes / string
-    # "track_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "artist_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "artist_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "album_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "album_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "artist_genres_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # # "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
+    "track_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "artist_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "artist_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "album_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "album_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "artist_genres_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    "time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
 
     # Float List
-    # "duration_ms_songs_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "artist_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "artists_followers_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_danceability_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_energy_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_loudness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_speechiness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_acousticness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_instrumentalness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_liveness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_valence_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "track_tempo_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "duration_ms_songs_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "artist_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "artists_followers_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_danceability_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_energy_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_loudness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_speechiness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_acousticness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_instrumentalness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_liveness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_valence_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
+    "track_tempo_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
 }
 
 options = tf.data.Options()
@@ -181,7 +181,7 @@ CANDIDATE_PREFIX = 'v1/'
 
 # candidate_files = ['gs://spotify-data-regimes/v1/candidates-00000-of-00001.tfrecords'] # TODO: parametrize
 # candidate_files = ['gs://spotify-data-regimes/jtv4/candidates-v4/candidates-00000-of-00001.tfrecords'] # removed tracks playlist titles
-candidate_files = ['gs://spotify-data-regimes/jtv5/candidates/candidates-00000-of-00001.tfrecords']
+candidate_files = ['gs://spotify-data-regimes/jtv8/candidates/candidates-00000-of-00001.tfrecords']
 
 # generate the candidate dataset
 
@@ -271,18 +271,18 @@ class Playlist_Model(tf.keras.Model):
             ], name="pl_collaborative_emb_model"
         )
         
-        # Feature: num_pl_followers_src
-        self.num_pl_followers_src_embedding = tf.keras.Sequential(
-            [
-                tf.keras.layers.Discretization(get_buckets_20(71643)),
-                tf.keras.layers.Embedding(
-                    input_dim=20 + 1, 
-                    output_dim=EMBEDDING_DIM,
-                    name="num_pl_followers_src_emb_layer",
-                ),
-                # tf.keras.layers.GlobalAveragePooling1D(name="num_pl_followers_src_1d"),
-            ], name="num_pl_followers_src_emb_model"
-        )
+        # # Feature: num_pl_followers_src
+        # self.num_pl_followers_src_embedding = tf.keras.Sequential(
+        #     [
+        #         tf.keras.layers.Discretization(get_buckets_20(71643)),
+        #         tf.keras.layers.Embedding(
+        #             input_dim=20 + 1, 
+        #             output_dim=EMBEDDING_DIM,
+        #             name="num_pl_followers_src_emb_layer",
+        #         ),
+        #         # tf.keras.layers.GlobalAveragePooling1D(name="num_pl_followers_src_1d"),
+        #     ], name="num_pl_followers_src_emb_model"
+        # )
         
         # Feature: pl_duration_ms_new
         self.pl_duration_ms_new_embedding = tf.keras.Sequential(
@@ -336,44 +336,44 @@ class Playlist_Model(tf.keras.Model):
             ], name="num_pl_albums_new_emb_model"
         )
         
-        # Feature: avg_track_pop_pl_new
-        self.avg_track_pop_pl_new_embedding = tf.keras.Sequential(
-            [
-                tf.keras.layers.Discretization(get_buckets_20(86)),      # TODO - was 100 | 86 from TRAIN
-                tf.keras.layers.Embedding(
-                    input_dim=20 + 1, 
-                    output_dim=EMBEDDING_DIM,
-                    name="avg_track_pop_pl_new_emb_layer",
-                ),
-                # tf.keras.layers.GlobalAveragePooling1D(name="avg_track_pop_pl_new_1d"),   
-            ], name="avg_track_pop_pl_new_emb_model"
-        )
+#         # Feature: avg_track_pop_pl_new
+#         self.avg_track_pop_pl_new_embedding = tf.keras.Sequential(
+#             [
+#                 tf.keras.layers.Discretization(get_buckets_20(86)),      # TODO - was 100 | 86 from TRAIN
+#                 tf.keras.layers.Embedding(
+#                     input_dim=20 + 1, 
+#                     output_dim=EMBEDDING_DIM,
+#                     name="avg_track_pop_pl_new_emb_layer",
+#                 ),
+#                 # tf.keras.layers.GlobalAveragePooling1D(name="avg_track_pop_pl_new_1d"),   
+#             ], name="avg_track_pop_pl_new_emb_model"
+#         )
         
-        # Feature: avg_artist_pop_pl_new
-        self.avg_artist_pop_pl_new_embedding = tf.keras.Sequential(
-            [
-                tf.keras.layers.Discretization(get_buckets_20(100)),     # TODO - parametrize
-                tf.keras.layers.Embedding(
-                    input_dim=20 + 1, 
-                    output_dim=EMBEDDING_DIM,
-                    name="avg_artist_pop_pl_new_emb_layer",
-                ),
-                # tf.keras.layers.GlobalAveragePooling1D(name="avg_artist_pop_pl_new_1d"),
-            ], name="avg_artist_pop_pl_new_emb_model"
-        )
+#         # Feature: avg_artist_pop_pl_new
+#         self.avg_artist_pop_pl_new_embedding = tf.keras.Sequential(
+#             [
+#                 tf.keras.layers.Discretization(get_buckets_20(100)),     # TODO - parametrize
+#                 tf.keras.layers.Embedding(
+#                     input_dim=20 + 1, 
+#                     output_dim=EMBEDDING_DIM,
+#                     name="avg_artist_pop_pl_new_emb_layer",
+#                 ),
+#                 # tf.keras.layers.GlobalAveragePooling1D(name="avg_artist_pop_pl_new_1d"),
+#             ], name="avg_artist_pop_pl_new_emb_model"
+#         )
         
-        # Feature: avg_art_followers_pl_new
-        self.avg_art_followers_pl_new_embedding = tf.keras.Sequential(
-            [
-                tf.keras.layers.Discretization(get_buckets_20(93079438)),   # TODO - was 100 | 93079438 from TRAIN
-                tf.keras.layers.Embedding(
-                    input_dim=20 + 1, 
-                    output_dim=EMBEDDING_DIM,
-                    name="avg_art_followers_pl_new_emb_layer",
-                ),
-                # tf.keras.layers.GlobalAveragePooling1D(name="avg_art_followers_pl_new_1d"),
-            ], name="avg_art_followers_pl_new_emb_model"
-        )
+#         # Feature: avg_art_followers_pl_new
+#         self.avg_art_followers_pl_new_embedding = tf.keras.Sequential(
+#             [
+#                 tf.keras.layers.Discretization(get_buckets_20(93079438)),   # TODO - was 100 | 93079438 from TRAIN
+#                 tf.keras.layers.Embedding(
+#                     input_dim=20 + 1, 
+#                     output_dim=EMBEDDING_DIM,
+#                     name="avg_art_followers_pl_new_emb_layer",
+#                 ),
+#                 # tf.keras.layers.GlobalAveragePooling1D(name="avg_art_followers_pl_new_1d"),
+#             ], name="avg_art_followers_pl_new_emb_model"
+#         )
         
         # ========================================
         # sequence playlist features
@@ -499,24 +499,24 @@ class Playlist_Model(tf.keras.Model):
         )
 
         # # Feature: tracks_playlist_titles_pl
-        # self.tracks_playlist_titles_pl_embedding = tf.keras.Sequential(
-        #     [
-        #         tf.keras.layers.TextVectorization(
-        #             max_tokens=MAX_TOKENS, 
-        #             ngrams=2, 
-        #             # vocabulary=vocab_dict['tracks_playlist_titles_pl'],
-        #             name="tracks_playlist_titles_pl_textvectorizor"
-        #         ),
-        #         tf.keras.layers.Embedding(
-        #             input_dim=MAX_TOKENS + 1, 
-        #             output_dim=EMBEDDING_DIM,
-        #             name="tracks_playlist_titles_pl_emb_layer",
-        #             mask_zero=False
-        #         ),
-        #         tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
-        #         tf.keras.layers.GlobalAveragePooling2D(name="tracks_playlist_titles_pl_2d"),
-        #     ], name="tracks_playlist_titles_pl_emb_model"
-        # )
+        self.tracks_playlist_titles_pl_embedding = tf.keras.Sequential(
+            [
+                tf.keras.layers.TextVectorization(
+                    max_tokens=MAX_TOKENS, 
+                    ngrams=2, 
+                    # vocabulary=vocab_dict['tracks_playlist_titles_pl'],
+                    name="tracks_playlist_titles_pl_textvectorizor"
+                ),
+                tf.keras.layers.Embedding(
+                    input_dim=MAX_TOKENS + 1, 
+                    output_dim=EMBEDDING_DIM,
+                    name="tracks_playlist_titles_pl_emb_layer",
+                    mask_zero=False
+                ),
+                tf.keras.layers.Reshape([-1, MAX_PLAYLIST_LENGTH, EMBEDDING_DIM]),
+                tf.keras.layers.GlobalAveragePooling2D(name="tracks_playlist_titles_pl_2d"),
+            ], name="tracks_playlist_titles_pl_emb_model"
+        )
         
         # Feature: duration_ms_songs_pl
         self.duration_ms_songs_pl_embedding = tf.keras.Sequential(
@@ -789,14 +789,14 @@ class Playlist_Model(tf.keras.Model):
                 # self.pl_name_src_embedding(data['pl_name_src']),
                 self.pl_name_src_text_embedding(data['pl_name_src']),
                 self.pl_collaborative_src_embedding(data['pl_collaborative_src']),
-                self.num_pl_followers_src_embedding(data["num_pl_followers_src"]),
+                # self.num_pl_followers_src_embedding(data["num_pl_followers_src"]),
                 self.pl_duration_ms_new_embedding(data["pl_duration_ms_new"]),
                 self.num_pl_songs_new_embedding(data["num_pl_songs_new"]), # num_pl_songs_new | n_songs_pl_new
                 self.num_pl_artists_new_embedding(data["num_pl_artists_new"]),
                 self.num_pl_albums_new_embedding(data["num_pl_albums_new"]),
-                self.avg_track_pop_pl_new_embedding(data["avg_track_pop_pl_new"]),
-                self.avg_artist_pop_pl_new_embedding(data["avg_artist_pop_pl_new"]),
-                self.avg_art_followers_pl_new_embedding(data["avg_art_followers_pl_new"]),
+                # self.avg_track_pop_pl_new_embedding(data["avg_track_pop_pl_new"]),
+                # self.avg_artist_pop_pl_new_embedding(data["avg_artist_pop_pl_new"]),
+                # self.avg_art_followers_pl_new_embedding(data["avg_art_followers_pl_new"]),
                 
                 # sequence features
                 self.track_uri_pl_embedding(data['track_uri_pl']),
@@ -806,7 +806,7 @@ class Playlist_Model(tf.keras.Model):
                 self.album_uri_pl_embedding(data["album_uri_pl"]),
                 self.album_name_pl_embedding(tf.reshape(data["album_name_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 self.artist_genres_pl_embedding(tf.reshape(data["artist_genres_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
-                # self.tracks_playlist_titles_pl_embedding(tf.reshape(data["tracks_playlist_titles_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
+                self.tracks_playlist_titles_pl_embedding(tf.reshape(data["tracks_playlist_titles_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 
                 self.duration_ms_songs_pl_embedding(data["duration_ms_songs_pl"]),
                 self.track_pop_pl_embedding(data["track_pop_pl"]),
@@ -1002,24 +1002,24 @@ class Candidate_Track_Model(tf.keras.Model):
             ], name="artists_followers_can_emb_model"
         )
         
-        # # Feature: track_pl_titles_can
-        # self.track_pl_titles_can_embedding = tf.keras.Sequential(
-        #     [
-        #         tf.keras.layers.TextVectorization(
-        #             max_tokens=MAX_TOKENS, 
-        #             ngrams=2, 
-        #             # vocabulary=vocab_dict['track_pl_titles_can'],
-        #             name="track_pl_titles_can_textvectorizor"
-        #         ),
-        #         tf.keras.layers.Embedding(
-        #             input_dim=MAX_TOKENS + 1, 
-        #             output_dim=EMBEDDING_DIM,
-        #             name="track_pl_titles_can_emb_layer",
-        #             mask_zero=False
-        #         ),
-        #         tf.keras.layers.GlobalAveragePooling1D(name="track_pl_titles_can_1d"),
-        #     ], name="track_pl_titles_can_emb_model"
-        # )
+        # Feature: track_pl_titles_can
+        self.track_pl_titles_can_embedding = tf.keras.Sequential(
+            [
+                tf.keras.layers.TextVectorization(
+                    max_tokens=MAX_TOKENS, 
+                    ngrams=2, 
+                    # vocabulary=vocab_dict['track_pl_titles_can'],
+                    name="track_pl_titles_can_textvectorizor"
+                ),
+                tf.keras.layers.Embedding(
+                    input_dim=MAX_TOKENS + 1, 
+                    output_dim=EMBEDDING_DIM,
+                    name="track_pl_titles_can_emb_layer",
+                    mask_zero=False
+                ),
+                tf.keras.layers.GlobalAveragePooling1D(name="track_pl_titles_can_1d"),
+            ], name="track_pl_titles_can_emb_model"
+        )
         
         # track_danceability_can
         self.track_danceability_can_embedding = tf.keras.Sequential(
@@ -1158,19 +1158,19 @@ class Candidate_Track_Model(tf.keras.Model):
             ], name="track_tempo_can_emb_model"
         )
         
-        # track_time_signature_can
-        self.track_time_signature_can_embedding = tf.keras.Sequential(
+        # time_signature_can
+        self.time_signature_can_embedding = tf.keras.Sequential(
             [
                 tf.keras.layers.Hashing(num_bins=6),
                 tf.keras.layers.Embedding(
                     input_dim=6 + 1,
                     output_dim=EMBEDDING_DIM,
                     mask_zero=False,
-                    name="track_time_signature_can_emb_layer",
+                    name="time_signature_can_emb_layer",
                     input_shape=()
                 ),
-                # tf.keras.layers.GlobalAveragePooling1D(name="track_time_signature_can_1d"),
-            ], name="track_time_signature_can_emb_model"
+                # tf.keras.layers.GlobalAveragePooling1D(name="time_signature_can_1d"),
+            ], name="time_signature_can_emb_model"
         )
         
         # ========================================
@@ -1234,7 +1234,7 @@ class Candidate_Track_Model(tf.keras.Model):
                 self.artist_genres_can_embedding(data['artist_genres_can']),
                 self.artists_followers_can_embedding(data['artist_followers_can']),
 
-                # self.track_pl_titles_can_embedding(data['track_pl_titles_can']),
+                self.track_pl_titles_can_embedding(data['track_pl_titles_can']),
                 self.track_danceability_can_embedding(data['track_danceability_can']),
                 self.track_energy_can_embedding(data['track_energy_can']),
                 self.track_key_can_embedding(data['track_key_can']),
@@ -1246,7 +1246,7 @@ class Candidate_Track_Model(tf.keras.Model):
                 self.track_liveness_can_embedding(data['track_liveness_can']),
                 self.track_valence_can_embedding(data['track_valence_can']),
                 self.track_tempo_can_embedding(data['track_tempo_can']),
-                self.track_time_signature_can_embedding(data['track_time_signature_can']),
+                self.time_signature_can_embedding(data['time_signature_can']),
             ], axis=1
         )
         

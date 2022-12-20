@@ -14,12 +14,12 @@ MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
-BQ_TABLE = 'train_flatten_last_5_feats_v4'
+BQ_TABLE = 'train_flat_last_5_v8'
 # Source data
 if len(sys.argv) > 1:
     BQ_TABLE = sys.argv[1]
 
-BQ_DATASET = 'a_spotify_ds_1m'
+BQ_DATASET = 'a_spotify_hack'
 TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage
@@ -72,7 +72,10 @@ print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
 
 def main():
     from train_pipeline import train_pipe_shape
+    # from train_pipeline import train_pipe
+    
     train_pipe_shape.run(args)
+    # train_pipe.run(args) # sequence example
     
 if __name__ == '__main__':
     main()

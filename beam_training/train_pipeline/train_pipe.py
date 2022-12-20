@@ -93,7 +93,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             'artist_pop_pl',
             'artist_genres_pl',
             'artists_followers_pl',
-            # 'tracks_playlist_titles_pl',
+            'tracks_playlist_titles_pl',
             'track_danceability_pl',
             'track_energy_pl',
             'track_key_pl',
@@ -147,8 +147,8 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
         for x in data['artists_followers_pl']:
             ragged_dict['artists_followers_pl'].append(x)
 
-        # for x in data['tracks_playlist_titles_pl']:
-        #     ragged_dict['tracks_playlist_titles_pl'].append(x.encode('utf8'))
+        for x in data['tracks_playlist_titles_pl']:
+            ragged_dict['tracks_playlist_titles_pl'].append(x.encode('utf8'))
             
         for x in data['track_mode_pl']:
             ragged_dict['track_mode_pl'].append(x.encode('utf8'))
@@ -195,7 +195,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
         album_uri_pl = tf.train.BytesList(value=ragged_dict['album_uri_pl'])
         album_name_pl = tf.train.BytesList(value=ragged_dict['album_name_pl'])
         artist_genres_pl = tf.train.BytesList(value=ragged_dict['artist_genres_pl'])
-        # tracks_playlist_titles_pl = tf.train.BytesList(value=ragged_dict['tracks_playlist_titles_pl'])
+        tracks_playlist_titles_pl = tf.train.BytesList(value=ragged_dict['tracks_playlist_titles_pl'])
         track_mode_pl = tf.train.BytesList(value=ragged_dict['track_mode_pl'])
         track_key_pl = tf.train.BytesList(value=ragged_dict['track_key_pl'])
         time_signature_pl = tf.train.BytesList(value=ragged_dict['time_signature_pl'])
@@ -224,7 +224,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
         album_uri_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=album_uri_pl)])
         album_name_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=album_name_pl)])
         artist_genres_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=artist_genres_pl)])
-        # tracks_playlist_titles_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=tracks_playlist_titles_pl)])
+        tracks_playlist_titles_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=tracks_playlist_titles_pl)])
         track_mode_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=track_mode_pl)])
         track_key_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=track_key_pl)])
         time_signature_pl = tf.train.FeatureList(feature=[tf.train.Feature(bytes_list=time_signature_pl)])
@@ -347,7 +347,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
                     "artist_pop_pl": artist_pop_pl,
                     "artist_genres_pl": artist_genres_pl,
                     "artists_followers_pl": artists_followers_pl,
-                    # 'tracks_playlist_titles_pl': tracks_playlist_titles_pl,
+                    'tracks_playlist_titles_pl': tracks_playlist_titles_pl,
                     'track_danceability_pl': track_danceability_pl,
                     'track_energy_pl': track_energy_pl,
                     'track_key_pl': track_key_pl,

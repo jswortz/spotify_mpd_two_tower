@@ -87,14 +87,14 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             # playlist - context features
             "pl_name_src": _string_array(data['pl_name_src']),
             'pl_collaborative_src' : _string_array(data['pl_collaborative_src']),
-            'num_pl_followers_src' : _float_feature(data['num_pl_followers_src']),
+            # 'num_pl_followers_src' : _float_feature(data['num_pl_followers_src']),
             'pl_duration_ms_new' : _float_feature(data['pl_duration_ms_new']),
             'num_pl_songs_new' : _float_feature(data['num_pl_songs_new']),           # n_songs_pl_new | num_pl_songs_new
             'num_pl_artists_new' : _float_feature(data['num_pl_artists_new']),
             'num_pl_albums_new' : _float_feature(data['num_pl_albums_new']),
-            'avg_track_pop_pl_new' : _float_feature(data['avg_track_pop_pl_new']),
-            'avg_artist_pop_pl_new' : _float_feature(data['avg_artist_pop_pl_new']),
-            'avg_art_followers_pl_new' : _float_feature(data['avg_art_followers_pl_new']),
+            # 'avg_track_pop_pl_new' : _float_feature(data['avg_track_pop_pl_new']),
+            # 'avg_artist_pop_pl_new' : _float_feature(data['avg_artist_pop_pl_new']),
+            # 'avg_art_followers_pl_new' : _float_feature(data['avg_art_followers_pl_new']),
 
             #candidate features
             "track_uri_can": _string_array(data['track_uri_can']),
@@ -109,7 +109,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "artist_genres_can": _string_array(data['artist_genres_can']),
             "artist_followers_can": _float_feature(data['artist_followers_can']),
             # new
-            # "track_pl_titles_can": _string_array(data['track_pl_titles_can']),
+            "track_pl_titles_can": _string_array(data['track_pl_titles_can']),
             "track_danceability_can": _float_feature(data['track_danceability_can']),
             "track_energy_can": _float_feature(data['track_energy_can']),
             "track_key_can": _string_array(data['track_key_can']),
@@ -121,7 +121,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_liveness_can": _float_feature(data['track_liveness_can']),
             "track_valence_can": _float_feature(data['track_valence_can']),
             "track_tempo_can": _float_feature(data['track_tempo_can']),
-            "track_time_signature_can": _string_array(data['track_time_signature_can']),
+            "time_signature_can": _string_array(data['time_signature_can']), # track_time_signature_can
             
             # ===================================================
             # Set playlist_seed_tracks (list types)
@@ -135,7 +135,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "album_uri_pl": _string_array(data['album_uri_pl']),
             "album_name_pl": _string_array(data['album_name_pl']),
             "artist_genres_pl": _string_array(data['artist_genres_pl']),
-            # "tracks_playlist_titles_pl": _string_array(data['tracks_playlist_titles_pl']),
+            "tracks_playlist_titles_pl": _string_array(data['tracks_playlist_titles_pl']),
             "track_key_pl": _string_array(data['track_key_pl']),
             "track_mode_pl": _string_array(data['track_mode_pl']),
             "time_signature_pl": _string_array(data['time_signature_pl']),
