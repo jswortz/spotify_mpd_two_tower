@@ -1,0 +1,12 @@
+
+PROJECT_ID = 'hybrid-vertex'
+NEW_ADAPTS = 'True'
+USE_CROSS_LAYER = False
+USE_DROPOUT = 'False'
+SEED = 1234
+MAX_PLAYLIST_LENGTH = 5         # this should improve performance vs 375
+EMBEDDING_DIM = 128   
+PROJECTION_DIM = 50  
+SEED = 1234
+DROPOUT_RATE = 0.33
+MAX_TOKENS = 20000

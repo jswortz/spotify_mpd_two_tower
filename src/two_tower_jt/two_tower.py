@@ -10,14 +10,25 @@ import pickle as pkl
 import os
 from pprint import pprint
 
-MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
-EMBEDDING_DIM = 128
-PROJECTION_DIM = 50
-SEED = 1234
-USE_CROSS_LAYER=False # TODO: True
-DROPOUT=False
-DROPOUT_RATE=0.33
-MAX_TOKENS=20000 #50000
+# MAX_PLAYLIST_LENGTH = 5 # this is set upstream by the BigQuery max length
+# EMBEDDING_DIM = 128
+# PROJECTION_DIM = 50
+# SEED = 1234
+# USE_CROSS_LAYER=False # TODO: True
+# DROPOUT=False
+# DROPOUT_RATE=0.33
+# MAX_TOKENS=20000 #50000
+
+import train_config as cfg
+
+EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
+PROJECTION_DIM = cfg.PROJECTION_DIM     # 50
+SEED = cfg.SEED                         # 1234
+USE_CROSS_LAYER = cfg.USE_CROSS_LAYER   # True
+DROPOUT = cfg.USE_DROPOUT               # 'False'
+DROPOUT_RATE = cfg.DROPOUT_RATE         # '0.33'
+MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH   # 5
+MAX_TOKENS = cfg.MAX_TOKENS             # '20000'
 
 client = storage.Client()
 
@@ -53,7 +64,7 @@ candidate_features = {
     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     # new
-    "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
@@ -83,7 +94,7 @@ feats = {
     "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
@@ -122,7 +133,7 @@ feats = {
     "album_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "album_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "artist_genres_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
+    # "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
@@ -173,7 +184,7 @@ def parse_candidate_tfrecord_fn(example):
 
 
 BUCKET = 'spotify-data-regimes'      # TODO - paramterize
-CANDIDATE_PREFIX = 'jtv8/candidates' # TODO - paramterize
+CANDIDATE_PREFIX = 'jtv10/candidates' # TODO - paramterize
 
 candidate_files = []
 for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}'):
@@ -223,7 +234,7 @@ filehandler.close()
 # print(vocab_dict) # TODO - remove
 
 class Playlist_Model(tf.keras.Model):
-    def __init__(self, layer_sizes):   # vocab_dict
+    def __init__(self, layer_sizes, vocab_dict):   # vocab_dict
         super().__init__()
         
 
@@ -841,7 +852,7 @@ class Playlist_Model(tf.keras.Model):
             return self.dense_layers(all_embs)
 
 class Candidate_Track_Model(tf.keras.Model):
-    def __init__(self, layer_sizes):  # vocab_dict
+    def __init__(self, layer_sizes, vocab_dict):  
         super().__init__()
         
         # ========================================
@@ -851,7 +862,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: track_uri_can
         self.track_uri_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Hashing(num_bins=2249561), # TODO - was 2262292
+                tf.keras.layers.Hashing(num_bins=2249561), # TODO
                 tf.keras.layers.Embedding(
                     input_dim=2249561+1, 
                     output_dim=EMBEDDING_DIM,
@@ -1267,18 +1278,18 @@ class Candidate_Track_Model(tf.keras.Model):
 
 class TheTwoTowers(tfrs.models.Model):
 
-    def __init__(self, layer_sizes):   # vocab_dict
+    def __init__(self, layer_sizes, vocab_dict, parsed_candidate_dataset):   # vocab_dict
         super().__init__()
         
-        self.query_tower = Playlist_Model(layer_sizes) # vocab_dict
+        self.query_tower = Playlist_Model(layer_sizes, vocab_dict)
 
-        self.candidate_tower = Candidate_Track_Model(layer_sizes) # vocab_dict
+        self.candidate_tower = Candidate_Track_Model(layer_sizes, vocab_dict)
 
         self.task = tfrs.tasks.Retrieval(
             metrics=tfrs.metrics.FactorizedTopK(
                 candidates=parsed_candidate_dataset.batch(128).map(
                     self.candidate_tower,
-                    # num_parallel_calls=tf.data.AUTOTUNE
+                    num_parallel_calls=tf.data.AUTOTUNE
                 ).prefetch(tf.data.AUTOTUNE)
             )
         )
@@ -1308,42 +1319,3 @@ class TheTwoTowers(tfrs.models.Model):
             candidate_ids=data['track_uri_can'],
             compute_batch_metrics=False
         ) # turn off metrics to save time on training
-
-# ##APPENDIX HELPER DIAGNOSTIC FUNCTIONS FOR NULLS:
-
-# for i in range(3,8):
-#     for _ in train_dataset.skip(i).take(1):#.map(lambda data:tf.reshape(data['track_name_pl'], [-1, 5, 1])).take(1):
-#         res = model.candidate_tower.layers[1](_['track_name_can'])
-#         v = tf.where(tf.math.is_nan(res), 1., 0.)
-#         print(tf.reduce_max(v).numpy()) #if this returns a one we have nans
-#     #     # ALBUM NAME CAN: tf.Tensor(1.0, shape=(), dtype=float32)
-#     # TRACK NAME CAN - has nulls with ALBUM NAME CAN
-
-
-# #     Track (candidate) Tower:
-# # 0 artist_name_can_emb_model
-# # 1 track_name_can_emb_model
-# # 2 artist_uri_can_emb_model
-# # 3 track_uri_can_emb_model
-# # 4 album_uri_can_emb_model
-# # 5 duration_ms_can_emb_model
-# # 6 artist_pop_can_emb_model
-# # 7 artists_followers_can_emb_model
-# # 8 track_pop_can_emb_model
-# # 9 artist_genres_can_emb_model
-# # 10 candidate_dense_layers
-
-
-# # # Playlist (query) Tower:
-# # # 0 pl_name_emb_model
-# # # 1 pl_collaborative_emb_model
-# # # 2 pl_track_uri_emb_model
-# # # 3 artist_name_pl_emb_model
-# # # 4 track_uri_pl_emb_model
-# # # 5 track_name_pl_emb_model
-# # # 6 duration_ms_songs_pl_emb_model
-# # # 7 artist_pop_pl_emb_model
-# # # 8 artists_followers_pl_emb_model
-# # # 9 track_pop_pl_emb_model
-# # # 10 artist_genres_pl_emb_model
-# # # 11 pl_dense_layer
