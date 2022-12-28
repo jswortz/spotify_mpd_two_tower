@@ -30,17 +30,17 @@ DROPOUT_RATE = cfg.DROPOUT_RATE         # '0.33'
 MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH   # 5
 MAX_TOKENS = cfg.MAX_TOKENS             # '20000'
 
-client = storage.Client()
+storage_client = storage.Client()
+
+# ====================================================
+# helper functions
+# ====================================================
 
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     """Uploads a file to the bucket."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-    # The path to your file to upload
-    # source_file_name = "local/path/to/file"
-    # The ID of your GCS object
-    # destination_blob_name = "storage-object-name"
-    # bucket_name = bucket_name.strip("gs://")
+    # bucket_name = "your-bucket-name" (no 'gs://')
+    # source_file_name = "local/path/to/file" (file to upload)
+    # destination_blob_name = "folder/paths-to/storage-object-name"
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob_name)
@@ -50,6 +50,15 @@ def upload_blob(bucket_name, source_file_name, destination_blob_name):
     print(
         f"File {source_file_name} uploaded to {destination_blob_name}."
     )
+    
+def get_buckets_20(MAX_VAL):
+    """ This helper funciton
+        creates discretization buckets of size 20
+        MAX_VAL: the max value of the tensor to be discritized
+        (Assuming 1 is min value)
+    """
+    list_buckets = list(np.linspace(0, MAX_VAL, num=20))
+    return(list_buckets)
 
 candidate_features = {
     "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
@@ -155,7 +164,7 @@ feats = {
 }
 
 options = tf.data.Options()
-options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.AUTO
+options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
 
 
 def parse_tfrecord(example):
@@ -182,40 +191,6 @@ def parse_candidate_tfrecord_fn(example):
     )
     return example
 
-
-BUCKET = 'spotify-data-regimes'      # TODO - paramterize
-CANDIDATE_PREFIX = 'jtv10/candidates' # TODO - paramterize
-
-candidate_files = []
-for blob in client.list_blobs(f"{BUCKET}", prefix=f'{CANDIDATE_PREFIX}'):
-    if '.tfrecords' in blob.name:
-        candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
-
-#generate the candidate dataset
-
-candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
-parsed_candidate_dataset = candidate_dataset.interleave(
-    lambda x: tf.data.TFRecordDataset(x),
-    cycle_length=tf.data.AUTOTUNE, 
-    num_parallel_calls=tf.data.AUTOTUNE,
-    deterministic=False
-).map(
-    parse_candidate_tfrecord_fn,
-    num_parallel_calls=tf.data.AUTOTUNE,
-).with_options(options)
-
-parsed_candidate_dataset = parsed_candidate_dataset.cache() #400 MB on machine mem
-
-client = storage.Client()
-def get_buckets_20(MAX_VAL):
-    """ This helper funciton
-        creates discretization buckets of size 20
-        MAX_VAL: the max value of the tensor to be discritized
-        (Assuming 1 is min value)
-    """
-    list_buckets = list(np.linspace(0, MAX_VAL, num=20))
-    return(list_buckets)
-
 # ======================
 # Vocab Adapts
 # ======================
@@ -223,7 +198,6 @@ def get_buckets_20(MAX_VAL):
 # > TODO: think about Feature Store integration
 
 import pickle as pkl
-# os.system('gsutil cp gs://spotify-data-regimes/jtv1/vocabs/vocab_dict.pkl .') # TODO: parametrize
 
 os.system('gsutil cp gs://two-tower-models/vocabs/vocab_dict.pkl .')  # TODO - paramterize
 
@@ -231,14 +205,21 @@ filehandler = open('vocab_dict.pkl', 'rb')
 vocab_dict = pkl.load(filehandler)
 filehandler.close()
 
-# print(vocab_dict) # TODO - remove
-
+# ========================================
+# playlist tower
+# ========================================
 class Playlist_Model(tf.keras.Model):
+    '''
+    build sequential model for each feature
+    pass outputs to dense/cross layers
+    concatentate the outputs
+    
+    the produced embedding represents the features 
+    of a Playlist known at query time 
+    '''
     def __init__(self, layer_sizes, vocab_dict):   # vocab_dict
         super().__init__()
         
-
-
         # ========================================
         # non-sequence playlist features
         # ========================================
@@ -1284,27 +1265,23 @@ class TheTwoTowers(tfrs.models.Model):
         self.query_tower = Playlist_Model(layer_sizes, vocab_dict)
 
         self.candidate_tower = Candidate_Track_Model(layer_sizes, vocab_dict)
-
+        
         self.task = tfrs.tasks.Retrieval(
-            metrics=tfrs.metrics.FactorizedTopK(
-                candidates=parsed_candidate_dataset.batch(128).map(
-                    self.candidate_tower,
-                    num_parallel_calls=tf.data.AUTOTUNE
-                ).prefetch(tf.data.AUTOTUNE)
-            )
-        )
-        #         candidates=parsed_candidate_dataset
-        #         .batch(128)
-        #         .cache()
-        #         .map(lambda x: (x['track_uri_can'], self.candidate_tower(x))), 
-        #         # ks=(1, 5, 10)
-        #             ),
-        #             batch_metrics=[
-        #                 tf.keras.metrics.TopKCategoricalAccuracy(1, name='batch_categorical_accuracy_at_1'), 
-        #                 tf.keras.metrics.TopKCategoricalAccuracy(5, name='batch_categorical_accuracy_at_5')
-        #             ],
-        #     remove_accidental_hits=False,
-        #     name="two_tower_retreival_task"
+            metrics=tfrs.metrics.FactorizedTopK(candidates=parsed_candidate_dataset.batch(128).cache().map(lambda x: (x['track_uri_can'], self.candidate_tower(x))), ks=(1, 5, 10)),
+            batch_metrics=[
+                tf.keras.metrics.TopKCategoricalAccuracy(1, name='batch_categorical_accuracy_at_1'), 
+                tf.keras.metrics.TopKCategoricalAccuracy(5, name='batch_categorical_accuracy_at_5')
+            ],
+            remove_accidental_hits=False,
+            name="two_tower_retreival_task")
+
+        # self.task = tfrs.tasks.Retrieval(
+        #     metrics=tfrs.metrics.FactorizedTopK(
+        #         candidates=parsed_candidate_dataset.batch(128).map(
+        #             self.candidate_tower,
+        #             num_parallel_calls=tf.data.AUTOTUNE
+        #         ).prefetch(tf.data.AUTOTUNE)
+        #     )
         # )
                      
     def compute_loss(self, data, training=False):

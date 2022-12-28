@@ -1,5 +1,6 @@
 
-FROM tensorflow/tensorflow:2.10.1-gpu
+# FROM tensorflow/tensorflow:2.10.1-gpu
+FROM gcr.io/deeplearning-platform-release/tf-gpu.2-10
 
 WORKDIR /src
 
