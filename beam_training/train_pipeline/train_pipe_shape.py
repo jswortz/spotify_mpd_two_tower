@@ -21,6 +21,7 @@ TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
 MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
+AUTOSCALE = 'THROUGHPUT_BASED'
 
 
 # CANDIDATE_DIR = ROOT + "/candidates/"
@@ -109,7 +110,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "artist_genres_can": _string_array(data['artist_genres_can']),
             "artist_followers_can": _float_feature(data['artist_followers_can']),
             # new
-            "track_pl_titles_can": _string_array(data['track_pl_titles_can']),
+            # "track_pl_titles_can": _string_array(data['track_pl_titles_can']),
             "track_danceability_can": _float_feature(data['track_danceability_can']),
             "track_energy_can": _float_feature(data['track_energy_can']),
             "track_key_can": _string_array(data['track_key_can']),
@@ -135,7 +136,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "album_uri_pl": _string_array(data['album_uri_pl']),
             "album_name_pl": _string_array(data['album_name_pl']),
             "artist_genres_pl": _string_array(data['artist_genres_pl']),
-            "tracks_playlist_titles_pl": _string_array(data['tracks_playlist_titles_pl']),
+            # "tracks_playlist_titles_pl": _string_array(data['tracks_playlist_titles_pl']),
             "track_key_pl": _string_array(data['track_key_pl']),
             "track_mode_pl": _string_array(data['track_mode_pl']),
             "time_signature_pl": _string_array(data['time_signature_pl']),
@@ -188,6 +189,7 @@ def run(args):
         '--setup_file', './setup.py',
         # '--requirements_file', 'requirements.txt',
         # '--worker_machine_type','xxx'
+        '--autoscaling_algorithm', AUTOSCALE,
     ]
 
     

@@ -14,7 +14,7 @@ MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
 NETWORK = 'ucaip-haystack-vpc-network'
 
-BQ_TABLE = 'train_flat_last_5_v8'
+BQ_TABLE = 'train_flat_last_5_v9'
 # Source data
 if len(sys.argv) > 1:
     BQ_TABLE = sys.argv[1]
