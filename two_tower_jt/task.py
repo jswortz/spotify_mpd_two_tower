@@ -250,7 +250,7 @@ def main(argv):
     #gather the metrics for the last epoch to be saved in metrics
     metrics_dict = {"train-time-minutes": runtime_mins}
     _ = [metrics_dict.update({key: layer_history.history[key][-1]}) for key in val_keys]
-    vertex_ai.log_metrics(metrics_dict)
+    # vertex_ai.log_metrics(metrics_dict) # JT TODO removed for 'total_loss' getting nan
     vertex_ai.end_run()
 
 
