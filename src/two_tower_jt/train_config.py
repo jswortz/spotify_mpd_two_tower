@@ -1,5 +1,6 @@
+
 PROJECT_ID = 'hybrid-vertex'
-NEW_ADAPTS = False
+NEW_ADAPTS = 'True'
 USE_CROSS_LAYER = False
 USE_DROPOUT = 'False'
 SEED = 1234

@@ -48,13 +48,15 @@ def parse_args():
     parser.add_argument('--projection_dim', type=int, required=False)
     parser.add_argument('--layer_sizes', type=str, required=False)
     parser.add_argument('--learning_rate', type=float, required=False)
-    # parser.add_argument('--valid_frequency', required=False)
+    parser.add_argument('--valid_frequency', type=int, required=False)
     parser.add_argument('--distribute', type=str, required=False)
     parser.add_argument('--model_version', type=str, required=False)
     parser.add_argument('--pipeline_version', type=str, required=False)
     parser.add_argument('--seed', type=int, required=False)
     parser.add_argument('--max_tokens', type=int, required=False)
     parser.add_argument('--tb_resource_name', type=str, required=False)
+    parser.add_argument('--embed_frequency', type=int, required=False)
+    parser.add_argument('--hist_frequency', type=int, required=False)
     
     return parser.parse_args()
 
@@ -138,6 +140,9 @@ def main(args):
     logging.info(f'pipeline_version: {args.pipeline_version}')
     logging.info(f'max_tokens: {args.max_tokens}')
     logging.info(f'tb_resource_name: {args.tb_resource_name}')
+    logging.info(f'valid_frequency: {args.valid_frequency}')
+    logging.info(f'embed_frequency: {args.embed_frequency}')
+    logging.info(f'hist_frequency: {args.hist_frequency}')
     
     # clients
     storage_client = storage.Client()
@@ -354,9 +359,10 @@ def main(args):
 
     tensorboard_callback = tf.keras.callbacks.TensorBoard(
             log_dir=f"{LOG_DIR}/tb-logs",
-            histogram_freq=0, 
-            write_graph=True, 
-            profile_batch=(5,15) #run profiler on steps 5-15 - enable this line if you want to run profiler from the utils/ notebook
+            histogram_freq=args.hist_frequency, 
+            write_graph=True,
+            embeddings_freq=args.embed_frequency,
+            # profile_batch=(5, 15) #run profiler on steps 5-15 - enable this line if you want to run profiler from the utils/ notebook
         )
     
     logging.info(f'TensorBoard logdir: {LOG_DIR}/tb-logs')
@@ -371,9 +377,9 @@ def main(args):
     start_time = time.time()
     
     layer_history = model.fit(
-        train_dataset.unbatch().batch(args.batch_size), # TODO - investigate why rebatch?
+        train_dataset, #.unbatch().batch(args.batch_size), # TODO - investigate why rebatch?
         validation_data=valid_dataset,
-        validation_freq=3,
+        validation_freq=args.valid_frequency,
         epochs=NUM_EPOCHS,
         # steps_per_epoch=2, #use this for development to run just a few steps
         validation_steps = 100,
@@ -412,6 +418,10 @@ def main(args):
                     "num_epochs": NUM_EPOCHS,
                     "batch_size": args.batch_size,
                     "learning_rate": args.learning_rate,
+                    "valid_freq": args.valid_frequency,
+                    "embed_freq": args.embed_frequency,
+                    "hist_freq": args.hist_frequency,
+                    # "xxx": args.xxxx,
                 }
             )
 
