@@ -57,6 +57,8 @@ def parse_args():
     parser.add_argument('--tb_resource_name', type=str, required=False)
     parser.add_argument('--embed_frequency', type=int, required=False)
     parser.add_argument('--hist_frequency', type=int, required=False)
+    parser.add_argument("--cache_train", action=argparse.BooleanOptionalAction) # drop for False; included for True
+    parser.add_argument("--evaluate_model", action=argparse.BooleanOptionalAction)
     
     return parser.parse_args()
 
@@ -143,6 +145,8 @@ def main(args):
     logging.info(f'valid_frequency: {args.valid_frequency}')
     logging.info(f'embed_frequency: {args.embed_frequency}')
     logging.info(f'hist_frequency: {args.hist_frequency}')
+    logging.info(f'cache_train: {args.cache_train}')
+    logging.info(f'evaluate_model: {args.evaluate_model}')
     
     # clients
     storage_client = storage.Client()
@@ -260,6 +264,12 @@ def main(args):
         num_parallel_calls=tf.data.AUTOTUNE,
         deterministic=False
     ).map(tt.parse_tfrecord, num_parallel_calls=tf.data.AUTOTUNE).batch(GLOBAL_BATCH_SIZE).prefetch(tf.data.AUTOTUNE).with_options(options)
+    
+    if args.cache_train:
+        logging.info("caching train_dataset in memory...")
+        train_dataset.cache()
+        logging.info("train_dataset should be cached in memory...")
+        logging.info(f"train_dataset: {train_dataset}")
     
     # ==============
     # Valid data
@@ -382,7 +392,7 @@ def main(args):
         validation_freq=args.valid_frequency,
         epochs=NUM_EPOCHS,
         # steps_per_epoch=2, #use this for development to run just a few steps
-        validation_steps = 100,
+        validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
             UploadTBLogsBatchEnd()
@@ -392,11 +402,31 @@ def main(args):
 
     end_time = time.time()
     val_keys = [v for v in layer_history.history.keys()]
-    runtime_mins = int((end_time - start_time) / 60)
-    metrics_dict = {"runtime_mins": runtime_mins}
-    logging.info(f"runtime_mins: {runtime_mins}")
+    total_train_time = int((end_time - start_time) / 60)
+    metrics_dict = {"total_train_time": runtitotal_train_timeme_mins}
+    logging.info(f"total_train_time: {total_train_time}")
     
     _ = [metrics_dict.update({key: layer_history.history[key][-1]}) for key in val_keys]
+    
+    if args.evaluate_model:
+        logging.info(f"beginning model eval...")
+        
+        start_time = time.time()
+        
+        eval_dict = model.evaluate(valid_dataset, return_dict=True)
+        
+        end_time = time.time()
+        
+        total_eval_time = int((end_time - start_time) / 60)
+        logging.info(f"total_eval_time: {total_eval_time}")
+        logging.info(f"eval_dict: {eval_dict}")
+        
+        if task_type == 'chief':
+            logging.info(f"Chief saving model eval dict...")
+            filehandler = open('model_eval_dict.pkl', 'wb')
+            pkl.dump(eval_dict, filehandler)
+            filehandler.close()
+            tt.upload_blob(f'{OUTPUT_BUCKET}', 'model_eval_dict.pkl', f'{args.experiment_name}/{args.experiment_run}/combined-model-eval/model_eval_dict.pkl')
     
     # ====================================================
     # log Vertex Experiments
