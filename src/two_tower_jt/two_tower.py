@@ -19,7 +19,8 @@ from pprint import pprint
 # DROPOUT_RATE=0.33
 # MAX_TOKENS=20000 #50000
 
-from . import train_config as cfg
+# from . import train_config as cfg
+import train_config as cfg
 
 EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
 PROJECTION_DIM = cfg.PROJECTION_DIM     # 50
