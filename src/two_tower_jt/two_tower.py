@@ -85,7 +85,7 @@ candidate_features = {
     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
+    "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
 }
 
 feats = {
@@ -286,7 +286,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_songs_new | n_songs_pl_new
         self.num_pl_songs_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(376)),    # TODO - was 100 | 376 from TRAIN
+                tf.keras.layers.Discretization(get_buckets_20(376)),    # TODO - 376 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -299,7 +299,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_artists_new
         self.num_pl_artists_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(238)),     # TODO - was 100 | 238 from TRAIN
+                tf.keras.layers.Discretization(get_buckets_20(238)),     # TODO - 238 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -312,7 +312,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_albums_new
         self.num_pl_albums_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(244)),   # TODO - was 100 | 244 from TRAIN
+                tf.keras.layers.Discretization(get_buckets_20(244)),   # TODO - 244 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=EMBEDDING_DIM,
@@ -325,7 +325,7 @@ class Playlist_Model(tf.keras.Model):
 #         # Feature: avg_track_pop_pl_new
 #         self.avg_track_pop_pl_new_embedding = tf.keras.Sequential(
 #             [
-#                 tf.keras.layers.Discretization(get_buckets_20(86)),      # TODO - was 100 | 86 from TRAIN
+#                 tf.keras.layers.Discretization(get_buckets_20(86)),      # TODO 86 from TRAIN
 #                 tf.keras.layers.Embedding(
 #                     input_dim=20 + 1, 
 #                     output_dim=EMBEDDING_DIM,
@@ -351,7 +351,7 @@ class Playlist_Model(tf.keras.Model):
 #         # Feature: avg_art_followers_pl_new
 #         self.avg_art_followers_pl_new_embedding = tf.keras.Sequential(
 #             [
-#                 tf.keras.layers.Discretization(get_buckets_20(93079438)),   # TODO - was 100 | 93079438 from TRAIN
+#                 tf.keras.layers.Discretization(get_buckets_20(93079438)),   # TODO - 93079438 from TRAIN
 #                 tf.keras.layers.Embedding(
 #                     input_dim=20 + 1, 
 #                     output_dim=EMBEDDING_DIM,
@@ -795,15 +795,11 @@ class Playlist_Model(tf.keras.Model):
                 # sequence features
                 self.track_uri_pl_embedding(data['track_uri_pl']),
                 self.track_name_pl_embedding(tf.reshape(data['track_name_pl'], [-1, MAX_PLAYLIST_LENGTH, 1])),
-                # self.track_name_pl_embedding(data['track_name_pl']),
                 self.artist_uri_pl_embedding(data["artist_uri_pl"]),
                 self.artist_name_pl_embedding(tf.reshape(data["artist_name_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
-                # self.artist_name_pl_embedding(data['artist_name_pl']),
                 self.album_uri_pl_embedding(data["album_uri_pl"]),
                 self.album_name_pl_embedding(tf.reshape(data["album_name_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
-                # self.album_name_pl_embedding(data['album_name_pl']),
                 self.artist_genres_pl_embedding(tf.reshape(data["artist_genres_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
-                # self.artist_genres_pl_embedding(data['artist_genres_pl']),
                 # self.tracks_playlist_titles_pl_embedding(tf.reshape(data["tracks_playlist_titles_pl"], [-1, MAX_PLAYLIST_LENGTH, 1])),
                 
                 self.duration_ms_songs_pl_embedding(data["duration_ms_songs_pl"]),

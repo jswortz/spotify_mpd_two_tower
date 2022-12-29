@@ -114,17 +114,14 @@ def main(args):
     # Set variables
     # ====================================================
     invoke_time = time.strftime("%Y%m%d-%H%M%S")
-    EXPERIMENT_NAME = args.experiment_name    
-    RUN_NAME = args.experiment_run
-
+    # EXPERIMENT_NAME = args.experiment_name    
+    # RUN_NAME = args.experiment_run
     OUTPUT_BUCKET = args.train_output_gcs_bucket
-    LOG_DIR = f'gs://{OUTPUT_BUCKET}/{EXPERIMENT_NAME}/{RUN_NAME}'
-
-    # batch_size = args.batch_size
+    LOG_DIR = f'gs://{OUTPUT_BUCKET}/{args.experiment_name}/{args.experiment_run}'
     
     logging.info(f'invoke_time: {invoke_time}')
-    logging.info(f'EXPERIMENT_NAME: {EXPERIMENT_NAME}')
-    logging.info(f'RUN_NAME: {RUN_NAME}')
+    logging.info(f'EXPERIMENT_NAME: {args.experiment_name}')
+    logging.info(f'RUN_NAME: {args.experiment_run}')
     logging.info(f'NUM_EPOCHS: {args.num_epochs}')
     logging.info(f'OUTPUT_BUCKET: {OUTPUT_BUCKET}')
     logging.info(f'LOG_DIR: {LOG_DIR}')
@@ -142,14 +139,13 @@ def main(args):
     logging.info(f'max_tokens: {args.max_tokens}')
     logging.info(f'tb_resource_name: {args.tb_resource_name}')
     
-
     # clients
     storage_client = storage.Client()
     
     vertex_ai.init(
         project=args.project,
         location='us-central1',
-        experiment=EXPERIMENT_NAME
+        experiment=args.experiment_name
     )
     
     # ====================================================
@@ -218,8 +214,6 @@ def main(args):
     # ====================================================
     logging.info(f'Downloading vocab file...')
     
-    # TODO: paramterize
-    
     os.system('gsutil cp gs://two-tower-models/vocabs/vocab_dict.pkl .')  # TODO - paramterize
 
     filehandler = open('vocab_dict.pkl', 'rb')
@@ -229,19 +223,19 @@ def main(args):
     # ====================================================
     # Data loading
     # ====================================================
+    # TODO - move to seperate py module in repo?
     logging.info(f'Preparing train, valid, and candidate tfrecords...\n')
+    
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     
     # ==============
     # Train data
     # ==============
-    train_dir = args.train_dir
-    train_dir_prefix = args.train_dir_prefix
-    logging.info(f'Path to TRAIN files: gs://{train_dir}/{train_dir_prefix}')
+    logging.info(f'Path to TRAIN files: gs://{args.train_dir}/{args.train_dir_prefix}')
 
     train_files = []
-    for blob in storage_client.list_blobs(f'{train_dir}', prefix=f'{train_dir_prefix}'):
+    for blob in storage_client.list_blobs(f'{args.train_dir}', prefix=f'{args.train_dir_prefix}'):
         if '.tfrecords' in blob.name:
             train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
@@ -265,12 +259,10 @@ def main(args):
     # ==============
     # Valid data
     # ==============
-    VALID_DIR = args.train_dir
-    VALID_DIR_PREFIX = args.valid_dir_prefix
-    logging.info(f'Path to VALID files: gs://{VALID_DIR}/{VALID_DIR_PREFIX}')
+    logging.info(f'Path to VALID files: gs://{args.valid_dir}/{args.valid_dir_prefix}')
     
     valid_files = []
-    for blob in storage_client.list_blobs(f'{VALID_DIR}', prefix=f'{VALID_DIR_PREFIX}'):
+    for blob in storage_client.list_blobs(f'{args.valid_dir}', prefix=f'{args.valid_dir_prefix}'):
         if '.tfrecords' in blob.name:
             valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
@@ -291,13 +283,10 @@ def main(args):
     # ==============
     # candidate data
     # ==============
-    CANDIDATE_FILE_DIR = args.candidate_file_dir
-    CANDIDATE_PREFIX = args.candidate_files_prefix # 'jtv10/candidates'
-    
-    logging.info(f'Path to CANDIDATE file(s): gs://{CANDIDATE_FILE_DIR}/{CANDIDATE_PREFIX}')
+    logging.info(f'Path to CANDIDATE file(s): gs://{args.candidate_file_dir}/{args.candidate_files_prefix}')
 
     candidate_files = []
-    for blob in storage_client.list_blobs(f"{CANDIDATE_FILE_DIR}", prefix=f'{CANDIDATE_PREFIX}'):
+    for blob in storage_client.list_blobs(f"{args.candidate_file_dir}", prefix=f'{args.candidate_files_prefix}'):
         if '.tfrecords' in blob.name:
             candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
@@ -353,7 +342,7 @@ def main(args):
         """
         return(f"""tb-gcp-uploader --tensorboard_resource_name={args.tb_resource_name} \
           --logdir={LOG_DIR}/tb-logs \
-          --experiment_name={EXPERIMENT_NAME} \
+          --experiment_name={args.experiment_name} \
           --one_shot={oneshot} \
           --event_file_inactive_secs={60*60*ttl_hrs}""")
     
@@ -367,7 +356,7 @@ def main(args):
             log_dir=f"{LOG_DIR}/tb-logs",
             histogram_freq=0, 
             write_graph=True, 
-            profile_batch=(5,15) #run profiler on steps 20-40 - enable this line if you want to run profiler from the utils/ notebook
+            profile_batch=(5,15) #run profiler on steps 5-15 - enable this line if you want to run profiler from the utils/ notebook
         )
     
     logging.info(f'TensorBoard logdir: {LOG_DIR}/tb-logs')
@@ -382,7 +371,7 @@ def main(args):
     start_time = time.time()
     
     layer_history = model.fit(
-        train_dataset.unbatch().batch(args.batch_size),
+        train_dataset.unbatch().batch(args.batch_size), # TODO - investigate why rebatch?
         validation_data=valid_dataset,
         validation_freq=3,
         epochs=NUM_EPOCHS,
@@ -407,12 +396,11 @@ def main(args):
     # log Vertex Experiments
     # ====================================================
     # IF CHIEF, LOG to EXPERIMENT
-    # if _is_chief(task_type, task_id):
     if task_type == 'chief':
         logging.info(f" task_type logging experiments: {task_type}")
         logging.info(f" task_id logging experiments: {task_id}")
         
-        with vertex_ai.start_run(RUN_NAME, tensorboard=args.tb_resource_name) as my_run:
+        with vertex_ai.start_run(args.experiment_run, tensorboard=args.tb_resource_name) as my_run:
             
             logging.info(f"logging metrics...")
             my_run.log_metrics(metrics_dict)
@@ -428,22 +416,25 @@ def main(args):
             )
 
             vertex_ai.end_run()
-            logging.info(f"EXPERIMENT RUN: {RUN_NAME} has ended")
+            logging.info(f"EXPERIMENT RUN: {args.experiment_run} has ended")
 
     # ====================================================
     # Save model
     # ====================================================
-    
     MODEL_DIR_GCS_URI = f'{LOG_DIR}/model-dir'
     logging.info(f"Saving models to {MODEL_DIR_GCS_URI}")
     
     # save model from primary node in multiworker
-    # if _is_chief(task_type, task_id):
     if task_type == 'chief':
-        tf.saved_model.save(model.query_tower, export_dir=MODEL_DIR_GCS_URI + "/query_model")
-        logging.info(f'Saved chief query model to {MODEL_DIR_GCS_URI}/query_model')
-        tf.saved_model.save(model.candidate_tower, export_dir=MODEL_DIR_GCS_URI + "/candidate_model")
-        logging.info(f'Saved chief candidate model to {MODEL_DIR_GCS_URI}/candidate_model')
+        #query tower
+        query_model_dir = f"{MODEL_DIR_GCS_URI}/query_model"
+        tf.saved_model.save(model.query_tower, export_dir=query_model_dir)
+        logging.info(f'Saved chief query model to {query_model_dir}')
+        # candidate tower
+        candidate_model_dir = f"{MODEL_DIR_GCS_URI}/candidate_model"
+        tf.saved_model.save(model.candidate_tower, export_dir=candidate_model_dir)
+        logging.info(f'Saved chief candidate model to {candidate_model_dir}')
+        
     else:
         worker_dir_query = MODEL_DIR_GCS_URI + '/workertemp_query_/' + str(task_id)
         tf.io.gfile.makedirs(worker_dir_query)
@@ -471,9 +462,6 @@ def main(args):
     candidate_embeddings = parsed_candidate_dataset.batch(10000).map(lambda x: [x['track_uri_can'], tf_if_null_return_zero(model.candidate_tower(x))])
     
     # Save to the required format
-    # make sure you start out with a clean empty file for the append write
-    # os.system('rm candidate_embeddings.json > /dev/null')
-    # os.system('touch candidate_embeddings.json')
     for batch in candidate_embeddings:
         songs, embeddings = batch
         with open(f"{Local_Candidate_Embedding_Index}", 'a') as f:
@@ -485,7 +473,7 @@ def main(args):
         tt.upload_blob(
             f'{OUTPUT_BUCKET}', 
             f'{Local_Candidate_Embedding_Index}', 
-            f'{EXPERIMENT_NAME}/{RUN_NAME}/candidates/{Local_Candidate_Embedding_Index}'
+            f'{args.experiment_name}/{args.experiment_run}/candidates/{Local_Candidate_Embedding_Index}'
         )
     
     logging.info(f"Saved {Local_Candidate_Embedding_Index} to {LOG_DIR}/candidates/{Local_Candidate_Embedding_Index}")
