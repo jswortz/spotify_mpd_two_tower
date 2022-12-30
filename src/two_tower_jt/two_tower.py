@@ -19,8 +19,10 @@ from pprint import pprint
 # DROPOUT_RATE=0.33
 # MAX_TOKENS=20000 #50000
 
-# from . import train_config as cfg
-import train_config as cfg
+# TODO: formatting for below import 
+# to be used in both train methods (notebook vs managed training)
+import train_config as cfg # needed for Vertex Train package
+# from . import train_config as cfg # needed for `02-build-model.ipynb`
 
 EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
 PROJECTION_DIM = cfg.PROJECTION_DIM     # 50
