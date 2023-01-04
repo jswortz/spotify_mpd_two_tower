@@ -18,8 +18,8 @@ from tensorflow.python.client import device_lib
 from google.cloud import aiplatform as vertex_ai
 from google.cloud import storage
 # import hypertune
-# import sys, traceback
-# from google.cloud.aiplatform.training_utils import cloud_profiler
+import traceback
+from google.cloud.aiplatform.training_utils import cloud_profiler
 
 # ====================================================
 # Args
@@ -51,6 +51,7 @@ def parse_args():
     parser.add_argument('--learning_rate', type=float, required=False)
     parser.add_argument('--valid_frequency', type=int, required=False)
     parser.add_argument('--valid_steps', type=int, required=False)
+    parser.add_argument('--epoch_steps', type=int, required=False)
     parser.add_argument('--distribute', type=str, required=False)
     parser.add_argument('--model_version', type=str, required=False)
     parser.add_argument('--pipeline_version', type=str, required=False)
@@ -61,6 +62,8 @@ def parse_args():
     parser.add_argument('--hist_frequency', type=int, required=False)
     parser.add_argument("--cache_train", action='store_true', help="include for True; ommit for False") #action=argparse.BooleanOptionalAction) # drop for False; included for True
     parser.add_argument("--evaluate_model", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--write_embeddings", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
     
     return parser.parse_args()
 
@@ -146,10 +149,13 @@ def main(args):
     logging.info(f'tb_resource_name: {args.tb_resource_name}')
     logging.info(f'valid_frequency: {args.valid_frequency}')
     logging.info(f'valid_steps: {args.valid_steps}')
+    logging.info(f'epoch_steps: {args.epoch_steps}')
     logging.info(f'embed_frequency: {args.embed_frequency}')
     logging.info(f'hist_frequency: {args.hist_frequency}')
     logging.info(f'cache_train: {args.cache_train}')
     logging.info(f'evaluate_model: {args.evaluate_model}')
+    logging.info(f'write_embeddings: {args.write_embeddings}')
+    logging.info(f'profiler: {args.profiler}')
     
     # clients
     storage_client = storage.Client()
@@ -349,7 +355,14 @@ def main(args):
     # callbacks
     # ====================================================
     
-    def get_upload_logs_to_manged_tb_command(ttl_hrs, oneshot="false"):
+    log_dir = f"{LOG_DIR}/tb-logs-jt"
+    if 'AIP_TENSORBOARD_LOG_DIR' in os.environ:
+        log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR']
+        logging.info(f'AIP_TENSORBOARD_LOG_DIR: {log_dir}')
+        
+    logging.info(f'log_dir for TensorBoard: {log_dir}')
+    
+    def get_upload_logs_to_manged_tb_command(ttl_hrs, oneshot="True"):
         """
         Run this and copy/paste the command into terminal to have 
         upload the tensorboard logs from this machine to the managed tb instance
@@ -370,43 +383,54 @@ def main(args):
         def on_epoch_end(self, epoch, logs=None):
             os.system(get_upload_logs_to_manged_tb_command(ttl_hrs = 5, oneshot="true"))
 
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(
-            log_dir=f"{LOG_DIR}/tb-logs",
+    if args.profiler:
+        #TODO
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir=log_dir,
             histogram_freq=args.hist_frequency, 
             write_graph=True,
-            embeddings_freq=args.embed_frequency,
-            # profile_batch=(5, 15) #run profiler on steps 5-15 - enable this line if you want to run profiler from the utils/ notebook
+            # embeddings_freq=args.embed_frequency,
+            profile_batch=(20, 30),
         )
-    
-    logging.info(f'TensorBoard logdir: {LOG_DIR}/tb-logs')
+        logging.info(f'Tensorboard callback should profile batches...')
+        
+    else:
+        # TODO
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir=log_dir,
+            histogram_freq=args.hist_frequency, 
+            write_graph=True,
+            # embeddings_freq=args.embed_frequency,
+        )
+        logging.info(f'Tensorboard callback NOT profiling batches...')
 
     # ====================================================
     # Train model
     # ====================================================
     
-#     # Initialize the profiler.
-#     logging.info('Initialize the profiler ...')
+    # Initialize the profiler.
+    logging.info('Initialize the profiler ...')
         
-#     try:
-#         cloud_profiler.init()
-#     except:
-#         ex_type, ex_value, ex_traceback = sys.exc_info()
-#         print("*** Unexpected:", ex_type.__name__, ex_value)
-#         traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
+    try:
+        cloud_profiler.init()
+    except:
+        ex_type, ex_value, ex_traceback = sys.exc_info()
+        print("*** Unexpected:", ex_type.__name__, ex_value)
+        traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
     
     logging.info('Starting training loop...')
     start_time = time.time()
     
     layer_history = model.fit(
-        train_dataset, #.unbatch().batch(args.batch_size), # TODO - investigate why rebatch?
+        train_dataset,
         validation_data=valid_dataset,
         validation_freq=args.valid_frequency,
         epochs=NUM_EPOCHS,
-        # steps_per_epoch=2, #use this for development to run just a few steps
+        steps_per_epoch=args.epoch_steps, #use this for development to run just a few steps
         validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
-            UploadTBLogsBatchEnd()
+            # UploadTBLogsBatchEnd()
         ], #the tensorboard will be automatically associated with the experiment and log subsequent runs with this callback
         verbose=1
     )
@@ -447,7 +471,10 @@ def main(args):
         logging.info(f" task_type logging experiments: {task_type}")
         logging.info(f" task_id logging experiments: {task_id}")
         
-        with vertex_ai.start_run(args.experiment_run, tensorboard=args.tb_resource_name) as my_run:
+        with vertex_ai.start_run(
+            args.experiment_run, 
+            # tensorboard=args.tb_resource_name
+        ) as my_run:
             
             logging.info(f"logging metrics...")
             my_run.log_metrics(metrics_dict)
@@ -507,27 +534,30 @@ def main(args):
     # ====================================================
     # Save embeddings
     # ====================================================
-    logging.info('Saving candidate embeddings...')
-    Local_Candidate_Embedding_Index = 'candidate_embeddings.json'
     
-    candidate_embeddings = parsed_candidate_dataset.batch(10000).map(lambda x: [x['track_uri_can'], tf_if_null_return_zero(model.candidate_tower(x))])
+    if args.write_embeddings:
+        # TODO: 
+        logging.info('Saving candidate embeddings...')
+        Local_Candidate_Embedding_Index = 'candidate_embeddings.json'
     
-    # Save to the required format
-    for batch in candidate_embeddings:
-        songs, embeddings = batch
-        with open(f"{Local_Candidate_Embedding_Index}", 'a') as f:
-            for song, emb in zip(songs.numpy(), embeddings.numpy()):
-                f.write('{"id":"' + str(song) + '","embedding":[' + ",".join(str(x) for x in list(emb)) + ']}')
-                f.write("\n")
+        candidate_embeddings = parsed_candidate_dataset.batch(10000).map(lambda x: [x['track_uri_can'], tf_if_null_return_zero(model.candidate_tower(x))])
     
-    if task_type == 'chief':
-        tt.upload_blob(
-            f'{OUTPUT_BUCKET}', 
-            f'{Local_Candidate_Embedding_Index}', 
-            f'{args.experiment_name}/{args.experiment_run}/candidates/{Local_Candidate_Embedding_Index}'
-        )
+        # Save to the required format
+        for batch in candidate_embeddings:
+            songs, embeddings = batch
+            with open(f"{Local_Candidate_Embedding_Index}", 'a') as f:
+                for song, emb in zip(songs.numpy(), embeddings.numpy()):
+                    f.write('{"id":"' + str(song) + '","embedding":[' + ",".join(str(x) for x in list(emb)) + ']}')
+                    f.write("\n")
+
+        if task_type == 'chief':
+            tt.upload_blob(
+                f'{OUTPUT_BUCKET}', 
+                f'{Local_Candidate_Embedding_Index}', 
+                f'{args.experiment_name}/{args.experiment_run}/candidates/{Local_Candidate_Embedding_Index}'
+            )
     
-    logging.info(f"Saved {Local_Candidate_Embedding_Index} to {LOG_DIR}/candidates/{Local_Candidate_Embedding_Index}")
+        logging.info(f"Saved {Local_Candidate_Embedding_Index} to {LOG_DIR}/candidates/{Local_Candidate_Embedding_Index}")
 
 
 if __name__ == '__main__':

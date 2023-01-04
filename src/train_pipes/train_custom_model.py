@@ -44,6 +44,7 @@ def train_custom_model(
     vertex_ai.init(
         project=project,
         location='us-central1',
+        experiment=experiment_name,
     )
     
     storage_client = storage.Client()
@@ -67,7 +68,8 @@ def train_custom_model(
     job = vertex_ai.CustomJob(
         display_name=JOB_NAME,
         worker_pool_specs=worker_pool_specs,
-        staging_bucket=BASE_OUTPUT_DIR,
+        base_output_dir=BASE_OUTPUT_DIR,
+        staging_bucket=f"{BASE_OUTPUT_DIR}/staging",
     )
     
     logging.info(f'Submitting train job to Vertex AI...')
