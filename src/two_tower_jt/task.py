@@ -60,10 +60,14 @@ def parse_args():
     parser.add_argument('--tb_resource_name', type=str, required=False)
     parser.add_argument('--embed_frequency', type=int, required=False)
     parser.add_argument('--hist_frequency', type=int, required=False)
+    parser.add_argument('--tf_gpu_thread_count', type=str, required=False)
+    parser.add_argument('--block_length', type=int, required=False)
+    parser.add_argument('--num_data_shards', type=int, required=False)
     parser.add_argument("--cache_train", action='store_true', help="include for True; ommit for False") #action=argparse.BooleanOptionalAction) # drop for False; included for True
     parser.add_argument("--evaluate_model", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--write_embeddings", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--set_jit", action='store_true', help="include for True; ommit for False")
     
     return parser.parse_args()
 
@@ -114,9 +118,8 @@ def main(args):
             logging.info(e)
                 
     # tf.debugging.set_log_device_placement(True) # logs all tf ops and their device placement;
-    # TF_GPU_THREAD_MODE='gpu_private'
     os.environ['TF_GPU_THREAD_MODE']='gpu_private'
-    os.environ['TF_GPU_THREAD_COUNT']='1'
+    os.environ['TF_GPU_THREAD_COUNT']=f'{args.tf_gpu_thread_count}' # '1'
     os.environ['TF_GPU_ALLOCATOR']='cuda_malloc_async'
     
     # ====================================================
@@ -156,6 +159,10 @@ def main(args):
     logging.info(f'evaluate_model: {args.evaluate_model}')
     logging.info(f'write_embeddings: {args.write_embeddings}')
     logging.info(f'profiler: {args.profiler}')
+    logging.info(f'tf_gpu_thread_count: {args.tf_gpu_thread_count}')
+    logging.info(f'set_jit: {args.set_jit}')
+    logging.info(f'block_length: {args.block_length}')
+    logging.info(f'num_data_shards: {args.num_data_shards}')
     
     # clients
     storage_client = storage.Client()
@@ -247,6 +254,9 @@ def main(args):
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     
+    # Disable intra-op parallelism to optimize for throughput instead of latency.
+    options.threading.max_intra_op_parallelism = 1 # TODO 
+    
     # ==============
     # Train data
     # ==============
@@ -267,12 +277,29 @@ def main(args):
         tf.data.AUTOTUNE,
     )
 
-    train_dataset = train_dataset.interleave(
+    train_dataset = train_dataset.interleave( # Parallelize data reading
         full_parse,
-        cycle_length=tf.data.AUTOTUNE, 
+        cycle_length=tf.data.AUTOTUNE,
+        block_length=args.block_length,
         num_parallel_calls=tf.data.AUTOTUNE,
         deterministic=False
-    ).map(tt.parse_tfrecord, num_parallel_calls=tf.data.AUTOTUNE).batch(GLOBAL_BATCH_SIZE).prefetch(tf.data.AUTOTUNE).with_options(options)
+    ).repeat(
+        args.num_epochs
+    ).batch( #vectorize mapped function
+        GLOBAL_BATCH_SIZE,
+        drop_remainder=True,
+    ).map(
+        tt.parse_tfrecord, 
+        num_parallel_calls=tf.data.AUTOTUNE
+    # ).repeat(
+    #     args.num_epochs
+    # ).batch(
+    #     GLOBAL_BATCH_SIZE
+    ).prefetch(
+        tf.data.AUTOTUNE
+    ).with_options(
+        options
+    )
     
     if args.cache_train:
         logging.info("caching train_dataset in memory...")
@@ -335,6 +362,8 @@ def main(args):
     NUM_EPOCHS = args.num_epochs
     LAYER_SIZES = get_arch_from_string(args.layer_sizes)
     
+    tf.config.optimizer.set_jit(args.set_jit) # Enable XLA.
+    
     # Wrap variable creation within strategy scope
     with strategy.scope():
 
@@ -362,26 +391,10 @@ def main(args):
         
     logging.info(f'log_dir for TensorBoard: {log_dir}')
     
-    def get_upload_logs_to_manged_tb_command(ttl_hrs, oneshot="True"):
-        """
-        Run this and copy/paste the command into terminal to have 
-        upload the tensorboard logs from this machine to the managed tb instance
-        Note that the log dir is at the granularity of the run to help select the proper
-        timestamped run in Tensorboard
-        You can also run this in one-shot mode after training is done 
-        to upload all tb objects at once
-        """
-        return(f"""tb-gcp-uploader --tensorboard_resource_name={args.tb_resource_name} \
-          --logdir={LOG_DIR}/tb-logs \
-          --experiment_name={args.experiment_name} \
-          --one_shot={oneshot} \
-          --event_file_inactive_secs={60*60*ttl_hrs}""")
+#     backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
+#         backup_dir=os.environ['AIP_CHECKPOINT_DIR']
+#     )
     
-    # we are going to ecapsulate this one-shot log uploader via a custom callback:
-
-    class UploadTBLogsBatchEnd(tf.keras.callbacks.Callback):
-        def on_epoch_end(self, epoch, logs=None):
-            os.system(get_upload_logs_to_manged_tb_command(ttl_hrs = 5, oneshot="true"))
 
     if args.profiler:
         #TODO
@@ -426,12 +439,12 @@ def main(args):
         validation_data=valid_dataset,
         validation_freq=args.valid_frequency,
         epochs=NUM_EPOCHS,
-        steps_per_epoch=args.epoch_steps, #use this for development to run just a few steps
+        steps_per_epoch=args.epoch_steps,
         validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
-            # UploadTBLogsBatchEnd()
-        ], #the tensorboard will be automatically associated with the experiment and log subsequent runs with this callback
+            # backup_and_restore_callback
+        ], 
         verbose=1
     )
 
