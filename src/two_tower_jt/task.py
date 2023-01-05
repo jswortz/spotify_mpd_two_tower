@@ -164,11 +164,14 @@ def main(args):
     logging.info(f'block_length: {args.block_length}')
     logging.info(f'num_data_shards: {args.num_data_shards}')
     
+    
+    project_number = os.environ["CLOUD_ML_PROJECT_ID"]
+    
     # clients
-    storage_client = storage.Client()
+    storage_client = storage.Client(project=project_number)
     
     vertex_ai.init(
-        project=args.project,
+        project=project_number,
         location='us-central1',
         experiment=args.experiment_name
     )
@@ -217,12 +220,8 @@ def main(args):
     GLOBAL_BATCH_SIZE = int(args.batch_size) * int(NUM_REPLICAS)
     logging.info(f'GLOBAL_BATCH_SIZE = {GLOBAL_BATCH_SIZE}')
 
-    # TODO: Determine type and task of the machine from the strategy cluster resolver
+    # type and task of machine from strategy
     logging.info(f'Setting task_type and task_id...')
-    # task_type, task_id = (
-    #     strategy.cluster_resolver.task_type,
-    #     strategy.cluster_resolver.task_id
-    # )
     if args.distribute == 'multiworker':
         task_type, task_id = (
             strategy.cluster_resolver.task_type,
@@ -257,22 +256,22 @@ def main(args):
     # Disable intra-op parallelism to optimize for throughput instead of latency.
     options.threading.max_intra_op_parallelism = 1 # TODO 
     
+    def full_parse(data):
+        # used for interleave - takes tensors and returns a tf.dataset
+        data = tf.data.TFRecordDataset(data)
+        return data
+    
     # ==============
     # Train data
     # ==============
+    logging.info("Creating TRAIN dataset...")
     logging.info(f'Path to TRAIN files: gs://{args.train_dir}/{args.train_dir_prefix}')
 
     train_files = []
     for blob in storage_client.list_blobs(f'{args.train_dir}', prefix=f'{args.train_dir_prefix}'):
         if '.tfrecords' in blob.name:
             train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
-
-    def full_parse(data):
-        # used for interleave - takes tensors and returns a tf.dataset
-        data = tf.data.TFRecordDataset(data)
-        return data
     
-    logging.info("Creating TRAIN dataset...")
     train_dataset = tf.data.Dataset.from_tensor_slices(train_files).prefetch(
         tf.data.AUTOTUNE,
     )
@@ -310,6 +309,7 @@ def main(args):
     # ==============
     # Valid data
     # ==============
+    logging.info("Creating cached VALID dataset...")
     logging.info(f'Path to VALID files: gs://{args.valid_dir}/{args.valid_dir_prefix}')
     
     valid_files = []
@@ -317,23 +317,33 @@ def main(args):
         if '.tfrecords' in blob.name:
             valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
-    logging.info("Creating cached VALID dataset...")
     valid_dataset = tf.data.Dataset.from_tensor_slices(valid_files).prefetch(
         tf.data.AUTOTUNE,
     )
 
-    valid_dataset = valid_dataset.interleave(
+    valid_dataset = valid_dataset.interleave( # Parallelize data reading
         full_parse,
         num_parallel_calls=tf.data.AUTOTUNE,
+        block_length=args.block_length,
         cycle_length=tf.data.AUTOTUNE, 
         deterministic=False,
-    ).map(tt.parse_tfrecord, num_parallel_calls=tf.data.AUTOTUNE).batch(GLOBAL_BATCH_SIZE).prefetch(tf.data.AUTOTUNE).with_options(options)
+    ).map(
+        tt.parse_tfrecord, 
+        num_parallel_calls=tf.data.AUTOTUNE
+    ).batch(
+        GLOBAL_BATCH_SIZE
+    ).prefetch(
+        tf.data.AUTOTUNE
+    ).with_options(
+        options
+    )
 
-    valid_dataset = valid_dataset.cache() #1gb machine mem + 400 MB in candidate ds (src/two-tower.py)
+    valid_dataset = valid_dataset.cache()
     
     # ==============
     # candidate data
     # ==============
+    logging.info("Creating cached CANDIDATE dataset...")
     logging.info(f'Path to CANDIDATE file(s): gs://{args.candidate_file_dir}/{args.candidate_files_prefix}')
 
     candidate_files = []
@@ -341,25 +351,27 @@ def main(args):
         if '.tfrecords' in blob.name:
             candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
 
-    logging.info("Creating cached CANDIDATE dataset...")
     candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
     
     parsed_candidate_dataset = candidate_dataset.interleave(
-        # lambda x: tf.data.TFRecordDataset(x),
         full_parse,
         cycle_length=tf.data.AUTOTUNE, 
         num_parallel_calls=tf.data.AUTOTUNE,
         deterministic=False
-    ).map(tt.parse_candidate_tfrecord_fn, num_parallel_calls=tf.data.AUTOTUNE).with_options(options)
+    ).map(
+        tt.parse_candidate_tfrecord_fn, 
+        num_parallel_calls=tf.data.AUTOTUNE
+    ).with_options(
+        options
+    )
 
-    parsed_candidate_dataset = parsed_candidate_dataset.cache() #400 MB on machine mem
+    parsed_candidate_dataset = parsed_candidate_dataset.cache()
 
     # ====================================================
     # Compile model
     # ====================================================
     logging.info('Setting model adapts and compiling model...')
     
-    NUM_EPOCHS = args.num_epochs
     LAYER_SIZES = get_arch_from_string(args.layer_sizes)
     
     tf.config.optimizer.set_jit(args.set_jit) # Enable XLA.
@@ -371,7 +383,6 @@ def main(args):
             LAYER_SIZES, 
             vocab_dict, 
             parsed_candidate_dataset,
-            # max_padding_len=args.max_padding
         )
             
         model.compile(optimizer=tf.keras.optimizers.Adagrad(args.learning_rate))
@@ -389,12 +400,15 @@ def main(args):
         log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR']
         logging.info(f'AIP_TENSORBOARD_LOG_DIR: {log_dir}')
         
-    logging.info(f'log_dir for TensorBoard: {log_dir}')
+    logging.info(f'TensorBoard log_dir: {log_dir}')
     
-#     backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
-#         backup_dir=os.environ['AIP_CHECKPOINT_DIR']
-#     )
-    
+    # model checkpoints - fault tolerance for multi-worker
+    backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
+        backup_dir=os.environ['AIP_CHECKPOINT_DIR'],
+        save_freq="epoch",
+    )
+    checkpoint_dir=os.environ['AIP_CHECKPOINT_DIR']
+    logging.info(f'Saving model checkpoints to {checkpoint_dir}')
 
     if args.profiler:
         #TODO
@@ -420,9 +434,17 @@ def main(args):
     # ====================================================
     # Train model
     # ====================================================
+#     train_samples = 60_733_427
+#     valid_samples = 613_001
+
+#     train_steps = train_samples // GLOBAL_BATCH_SIZE
+#     val_steps = valid_samples // GLOBAL_BATCH_SIZE
     
-    # Initialize the profiler.
-    logging.info('Initialize the profiler ...')
+    # logging.info(f'train_steps: {train_steps}')
+    # logging.info(f'val_steps: {val_steps}')
+    
+    # Initialize profiler
+    logging.info('Initializing profiler ...')
         
     try:
         cloud_profiler.init()
@@ -432,30 +454,34 @@ def main(args):
         traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
     
     logging.info('Starting training loop...')
+    
     start_time = time.time()
     
     layer_history = model.fit(
         train_dataset,
         validation_data=valid_dataset,
         validation_freq=args.valid_frequency,
-        epochs=NUM_EPOCHS,
+        epochs=args.num_epochs,
         steps_per_epoch=args.epoch_steps,
         validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
-            # backup_and_restore_callback
+            backup_and_restore_callback,
         ], 
-        verbose=1
+        verbose=2
     )
 
     end_time = time.time()
+    
     val_keys = [v for v in layer_history.history.keys()]
     total_train_time = int((end_time - start_time) / 60)
+    
     metrics_dict = {"total_train_time": total_train_time}
     logging.info(f"total_train_time: {total_train_time}")
     
     _ = [metrics_dict.update({key: layer_history.history[key][-1]}) for key in val_keys]
     
+    # evaluate model
     if args.evaluate_model:
         logging.info(f"beginning model eval...")
         
@@ -466,9 +492,11 @@ def main(args):
         end_time = time.time()
         
         total_eval_time = int((end_time - start_time) / 60)
+        
         logging.info(f"total_eval_time: {total_eval_time}")
         logging.info(f"eval_dict: {eval_dict}")
         
+        # save eval dict
         if task_type == 'chief':
             logging.info(f"Chief saving model eval dict...")
             filehandler = open('model_eval_dict.pkl', 'wb')
@@ -479,7 +507,6 @@ def main(args):
     # ====================================================
     # log Vertex Experiments
     # ====================================================
-    # IF CHIEF, LOG to EXPERIMENT
     if task_type == 'chief':
         logging.info(f" task_type logging experiments: {task_type}")
         logging.info(f" task_id logging experiments: {task_id}")
@@ -496,13 +523,12 @@ def main(args):
             my_run.log_params(
                 {
                     "layers": str(LAYER_SIZES),
-                    "num_epochs": NUM_EPOCHS,
+                    "num_epochs": args.num_epochs,
                     "batch_size": args.batch_size,
                     "learning_rate": args.learning_rate,
                     "valid_freq": args.valid_frequency,
-                    "embed_freq": args.embed_frequency,
-                    "hist_freq": args.hist_frequency,
-                    # "xxx": args.xxxx,
+                    # "embed_freq": args.embed_frequency,
+                    # "hist_freq": args.hist_frequency,
                 }
             )
 
@@ -515,18 +541,21 @@ def main(args):
     MODEL_DIR_GCS_URI = f'{LOG_DIR}/model-dir'
     logging.info(f"Saving models to {MODEL_DIR_GCS_URI}")
     
-    # save model from primary node in multiworker
+    # save model from primary in multiworker
     if task_type == 'chief':
-        #query tower
+        
+        # query tower
         query_model_dir = f"{MODEL_DIR_GCS_URI}/query_model"
         tf.saved_model.save(model.query_tower, export_dir=query_model_dir)
         logging.info(f'Saved chief query model to {query_model_dir}')
+        
         # candidate tower
         candidate_model_dir = f"{MODEL_DIR_GCS_URI}/candidate_model"
         tf.saved_model.save(model.candidate_tower, export_dir=candidate_model_dir)
         logging.info(f'Saved chief candidate model to {candidate_model_dir}')
         
     else:
+        # workers (tmp) 
         worker_dir_query = MODEL_DIR_GCS_URI + '/workertemp_query_/' + str(task_id)
         tf.io.gfile.makedirs(worker_dir_query)
         tf.saved_model.save(model.query_tower, worker_dir_query)
@@ -537,12 +566,11 @@ def main(args):
         tf.saved_model.save(model.candidate_tower, worker_dir_can)
         logging.info(f'Saved worker: {task_id} candidate model to {worker_dir_can}')
 
-    # if not _is_chief(task_type, task_id):
     if task_type != 'chief':
         tf.io.gfile.rmtree(worker_dir_can)
         tf.io.gfile.rmtree(worker_dir_query)
 
-    logging.info('All done - models saved') #all done
+    logging.info('Models saved') #all done
 
     # ====================================================
     # Save embeddings

@@ -47,7 +47,7 @@ def train_custom_model(
         experiment=experiment_name,
     )
     
-    storage_client = storage.Client()
+    storage_client = storage.Client(project=project)
     
     JOB_NAME = f'train-{model_name}'
     logging.info(f'JOB_NAME: {JOB_NAME}')
