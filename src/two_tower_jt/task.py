@@ -68,6 +68,7 @@ def parse_args():
     parser.add_argument("--write_embeddings", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--set_jit", action='store_true', help="include for True; ommit for False")
+    parser.add_argument('--chkpt_freq', required=False) # type=int | TODO: value could be int or string
     
     return parser.parse_args()
 
@@ -163,6 +164,7 @@ def main(args):
     logging.info(f'set_jit: {args.set_jit}')
     logging.info(f'block_length: {args.block_length}')
     logging.info(f'num_data_shards: {args.num_data_shards}')
+    logging.info(f'chkpt_freq: {args.chkpt_freq}')
     
     
     project_number = os.environ["CLOUD_ML_PROJECT_ID"]
@@ -409,6 +411,16 @@ def main(args):
     )
     checkpoint_dir=os.environ['AIP_CHECKPOINT_DIR']
     logging.info(f'Saving model checkpoints to {checkpoint_dir}')
+    
+    # model checkpoints - ModelCheckpoint | BackupAndRestore
+    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_dir,
+        save_weights_only=True,
+        save_best_only=True,
+        monitor='total_loss',
+        mode='min',
+        save_freq=args.chkpt_freq,
+    )
 
     if args.profiler:
         #TODO
@@ -466,7 +478,7 @@ def main(args):
         validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
-            backup_and_restore_callback,
+            model_checkpoint_callback,
         ], 
         verbose=2
     )

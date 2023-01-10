@@ -1,0 +1,9 @@
+.gcloudignore
+/local_files/
+/img/
+*.pkl
+*.png
+.git
+.github
+.ipynb_checkpoints/*
+*__pycache__
