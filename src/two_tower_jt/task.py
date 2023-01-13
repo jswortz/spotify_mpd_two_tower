@@ -292,10 +292,6 @@ def main(args):
     ).map(
         tt.parse_tfrecord, 
         num_parallel_calls=tf.data.AUTOTUNE
-    # ).repeat(
-    #     args.num_epochs
-    # ).batch(
-    #     GLOBAL_BATCH_SIZE
     ).prefetch(
         tf.data.AUTOTUNE
     ).with_options(
@@ -394,7 +390,7 @@ def main(args):
     tf.random.set_seed(args.seed)
     
     # ====================================================
-    # callbacks
+    # callbacks-v2
     # ====================================================
     
     log_dir = f"{LOG_DIR}/tb-logs-jt"
@@ -405,21 +401,22 @@ def main(args):
     logging.info(f'TensorBoard log_dir: {log_dir}')
     
     # model checkpoints - fault tolerance for multi-worker
-    backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
-        backup_dir=os.environ['AIP_CHECKPOINT_DIR'],
-        save_freq="epoch",
-    )
+    # backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
+    #     backup_dir=os.environ['AIP_CHECKPOINT_DIR'],
+    #     save_freq="epoch",
+    # )
     checkpoint_dir=os.environ['AIP_CHECKPOINT_DIR']
     logging.info(f'Saving model checkpoints to {checkpoint_dir}')
     
     # model checkpoints - ModelCheckpoint | BackupAndRestore
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_dir,
+        filepath=checkpoint_dir + "/cp-{epoch:03d}-loss={loss:.2f}.ckpt", # cp-{epoch:04d}.ckpt" cp-{epoch:04d}.ckpt"
         save_weights_only=True,
         save_best_only=True,
         monitor='total_loss',
         mode='min',
         save_freq=args.chkpt_freq,
+        verbose=1,
     )
 
     if args.profiler:
