@@ -1257,13 +1257,14 @@ class TheTwoTowers(tfrs.models.Model):
         self.candidate_tower = Candidate_Track_Model(layer_sizes, vocab_dict)
         
         self.task = tfrs.tasks.Retrieval(
-            metrics=tfrs.metrics.FactorizedTopK(candidates=parsed_candidate_dataset.batch(128).cache().map(lambda x: (x['track_uri_can'], self.candidate_tower(x))), ks=(1, 5, 10)),
+            metrics=tfrs.metrics.FactorizedTopK(candidates=parsed_candidate_dataset.batch(128).cache().map(lambda x: (x['track_uri_can'], self.candidate_tower(x))), ks=(1, 5, 10)),  # .batch(4096)
             batch_metrics=[
                 tf.keras.metrics.TopKCategoricalAccuracy(1, name='batch_categorical_accuracy_at_1'), 
                 tf.keras.metrics.TopKCategoricalAccuracy(5, name='batch_categorical_accuracy_at_5')
             ],
             remove_accidental_hits=False,
-            name="two_tower_retreival_task")
+            name="two_tower_retreival_task"
+        )
 
         # self.task = tfrs.tasks.Retrieval(
         #     metrics=tfrs.metrics.FactorizedTopK(

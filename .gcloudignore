@@ -7,3 +7,5 @@
 .github
 .ipynb_checkpoints/*
 *__pycache__
+spotipy_secret_creds.py
+candidate_embs_local_v6_20230112-180944.json

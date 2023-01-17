@@ -10,6 +10,8 @@ import json
 import time
 import pickle as pkl
 import numpy as np
+import random
+import string
 
 import tensorflow as tf
 import tensorflow_recommenders as tfrs
@@ -69,6 +71,7 @@ def parse_args():
     parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--set_jit", action='store_true', help="include for True; ommit for False")
     parser.add_argument('--chkpt_freq', required=False) # type=int | TODO: value could be int or string
+    # parser.add_argument('--train_prefetch', required=False)
     
     return parser.parse_args()
 
@@ -165,6 +168,7 @@ def main(args):
     logging.info(f'block_length: {args.block_length}')
     logging.info(f'num_data_shards: {args.num_data_shards}')
     logging.info(f'chkpt_freq: {args.chkpt_freq}')
+    # logging.info(f'train_prefetch: {args.train_prefetch}')
     
     
     project_number = os.environ["CLOUD_ML_PROJECT_ID"]
@@ -293,7 +297,7 @@ def main(args):
         tt.parse_tfrecord, 
         num_parallel_calls=tf.data.AUTOTUNE
     ).prefetch(
-        tf.data.AUTOTUNE
+        tf.data.AUTOTUNE # GLOBAL_BATCH_SIZE*3 # tf.data.AUTOTUNE
     ).with_options(
         options
     )
@@ -325,11 +329,13 @@ def main(args):
         block_length=args.block_length,
         cycle_length=tf.data.AUTOTUNE, 
         deterministic=False,
+    ).batch(
+        GLOBAL_BATCH_SIZE
     ).map(
         tt.parse_tfrecord, 
         num_parallel_calls=tf.data.AUTOTUNE
-    ).batch(
-        GLOBAL_BATCH_SIZE
+    # ).batch(
+    #     GLOBAL_BATCH_SIZE
     ).prefetch(
         tf.data.AUTOTUNE
     ).with_options(
@@ -356,6 +362,8 @@ def main(args):
         cycle_length=tf.data.AUTOTUNE, 
         num_parallel_calls=tf.data.AUTOTUNE,
         deterministic=False
+    # ).batch(
+    #     GLOBAL_BATCH_SIZE
     ).map(
         tt.parse_candidate_tfrecord_fn, 
         num_parallel_calls=tf.data.AUTOTUNE
@@ -426,7 +434,8 @@ def main(args):
             histogram_freq=args.hist_frequency, 
             write_graph=True,
             # embeddings_freq=args.embed_frequency,
-            profile_batch=(20, 30),
+            profile_batch=(25, 30),
+            update_freq='epoch',     # TODO: JT updated
         )
         logging.info(f'Tensorboard callback should profile batches...')
         
@@ -516,12 +525,15 @@ def main(args):
     # ====================================================
     # log Vertex Experiments
     # ====================================================
+    SESSION_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=3)) # handle restarts for Vertex Experiments
+    
     if task_type == 'chief':
         logging.info(f" task_type logging experiments: {task_type}")
         logging.info(f" task_id logging experiments: {task_id}")
+        logging.info(f" logging data to experiment run: {args.experiment_run}-{SESSION_id}")
         
         with vertex_ai.start_run(
-            args.experiment_run, 
+            f'{args.experiment_run}-{SESSION_id}', 
             # tensorboard=args.tb_resource_name
         ) as my_run:
             
@@ -536,13 +548,14 @@ def main(args):
                     "batch_size": args.batch_size,
                     "learning_rate": args.learning_rate,
                     "valid_freq": args.valid_frequency,
+                    "gpu_thread_cnt": args.tf_gpu_thread_count,
                     # "embed_freq": args.embed_frequency,
                     # "hist_freq": args.hist_frequency,
                 }
             )
 
             vertex_ai.end_run()
-            logging.info(f"EXPERIMENT RUN: {args.experiment_run} has ended")
+            logging.info(f"EXPERIMENT RUN: {args.experiment_run}-{SESSION_id} has ended")
 
     # ====================================================
     # Save model
