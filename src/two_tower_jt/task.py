@@ -65,11 +65,12 @@ def parse_args():
     parser.add_argument('--tf_gpu_thread_count', type=str, required=False)
     parser.add_argument('--block_length', type=int, required=False)
     parser.add_argument('--num_data_shards', type=int, required=False)
-    parser.add_argument("--cache_train", action='store_true', help="include for True; ommit for False") #action=argparse.BooleanOptionalAction) # drop for False; included for True
+    parser.add_argument("--cache_train", action='store_true', help="include for True; ommit for False") # drop for False; included for True
     parser.add_argument("--evaluate_model", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--write_embeddings", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--set_jit", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--compute_batch_metrics", action='store_true', help="include for True; ommit for False")
     parser.add_argument('--chkpt_freq', required=False) # type=int | TODO: value could be int or string
     # parser.add_argument('--train_prefetch', required=False)
     
@@ -168,6 +169,7 @@ def main(args):
     logging.info(f'block_length: {args.block_length}')
     logging.info(f'num_data_shards: {args.num_data_shards}')
     logging.info(f'chkpt_freq: {args.chkpt_freq}')
+    logging.info(f'compute_batch_metrics: {args.compute_batch_metrics}')
     # logging.info(f'train_prefetch: {args.train_prefetch}')
     
     
@@ -276,7 +278,8 @@ def main(args):
     train_files = []
     for blob in storage_client.list_blobs(f'{args.train_dir}', prefix=f'{args.train_dir_prefix}'):
         if '.tfrecords' in blob.name:
-            train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
     
     train_dataset = tf.data.Dataset.from_tensor_slices(train_files).prefetch(
         tf.data.AUTOTUNE,
@@ -317,7 +320,8 @@ def main(args):
     valid_files = []
     for blob in storage_client.list_blobs(f'{args.valid_dir}', prefix=f'{args.valid_dir_prefix}'):
         if '.tfrecords' in blob.name:
-            valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
 
     valid_dataset = tf.data.Dataset.from_tensor_slices(valid_files).prefetch(
         tf.data.AUTOTUNE,
@@ -353,7 +357,8 @@ def main(args):
     candidate_files = []
     for blob in storage_client.list_blobs(f"{args.candidate_file_dir}", prefix=f'{args.candidate_files_prefix}'):
         if '.tfrecords' in blob.name:
-            candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
 
     candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
     
@@ -389,6 +394,7 @@ def main(args):
             LAYER_SIZES, 
             vocab_dict, 
             parsed_candidate_dataset,
+            compute_batch_metrics=args.compute_batch_metrics,
         )
             
         model.compile(optimizer=tf.keras.optimizers.Adagrad(args.learning_rate))

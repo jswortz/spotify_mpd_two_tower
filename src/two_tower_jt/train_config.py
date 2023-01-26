@@ -1,8 +1,8 @@
 
 PROJECT_ID = 'hybrid-vertex'
 NEW_ADAPTS = 'True'
-USE_CROSS_LAYER = False
-USE_DROPOUT = 'False'
+USE_CROSS_LAYER = True
+USE_DROPOUT = 'True'
 SEED = 1234
 MAX_PLAYLIST_LENGTH = 15         # this should improve performance vs 375
 EMBEDDING_DIM = 128   

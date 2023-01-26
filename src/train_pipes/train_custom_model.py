@@ -6,7 +6,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image='python:3.9',
     packages_to_install=[
-        'google-cloud-aiplatform==1.18.1',
+        'google-cloud-aiplatform==1.20.0',
         # 'tensorflow==2.9.2',
         # 'tensorflow-recommenders==0.7.0',
         'numpy',
@@ -39,6 +39,7 @@ def train_custom_model(
     import pickle as pkl
     
     from google.cloud import aiplatform as vertex_ai
+    import google.cloud.aiplatform_v1beta1 as aip_beta
     from google.cloud import storage
     
     vertex_ai.init(
