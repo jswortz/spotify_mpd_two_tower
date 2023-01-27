@@ -2,25 +2,27 @@ from datetime import datetime
 import sys
 
 # setup
-PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-data-regimes' # 'spotify-tfrecords-blog' # Set your Bucket name
-REGION = 'us-central1' # Set the region for Dataflow jobs
-VERSION = sys.argv[5]
+PROJECT_ID = sys.argv[1]      # 'hybrid-vertex'
+NETWORK = sys.argv[2]         # 'ucaip-haystack-vpc-network'
+REGION = sys.argv[3]          # 'us-central1' # Set the region for Dataflow jobs
+VERSION = sys.argv[4]
+BUCKET_NAME = sys.argv[5]     # 'spotify-data-regimes'
+GCS_SUBFOLDER = sys.argv[6]
+
+TOTAL_MB_DS = sys.argv[7]
+TARGET_SHARD_SIZE_MB = sys.argv[8]
+NUM_TF_RECORDS = int(TOTAL_MB_DS) // int(TARGET_SHARD_SIZE_MB)
+
+# Source data
+BQ_DATASET = sys.argv[9]                             # 'a_spotify_hack'
+BQ_TABLE = sys.argv[10]                              # 'train_flat_last_5_v9' 
+TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
 JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
 MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
-NETWORK = 'ucaip-haystack-vpc-network'
-
-BQ_TABLE = 'train_flat_last_5_v9'
-# Source data
-if len(sys.argv) > 1:
-    BQ_TABLE = sys.argv[1]
-
-BQ_DATASET = 'a_spotify_hack'
-TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between project and ds
 
 # storage
 ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
@@ -33,20 +35,6 @@ TF_RECORD_DIR = ROOT + '/tf-records/'
 CANDIDATE_DIR = ROOT + "/candidates/"
 
 QUERY = f"SELECT * FROM {PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}"
-
-
-# total_samples = 65_346_428  
-# samples_per_file = 12_800 
-# NUM_TF_RECORDS = total_samples // samples_per_file
-
-total_mb_train = sys.argv[4]
-target_shard_size_mb = sys.argv[3]
-
-NUM_TF_RECORDS = int(total_mb_train) // int(target_shard_size_mb)
-
-
-# if NUM_TF_RECORDS % total_samples:
-#     NUM_TF_RECORDS += 1
 
 
 args = {
@@ -64,10 +52,11 @@ args = {
     'save_main_session': True,
     'version': VERSION,
     'setup_file': './setup.py',
-    'folder': sys.argv[2], ## train or valid
+    'folder': GCS_SUBFOLDER, # sys.argv[2], ## train or valid
+    'bucket_name': BUCKET_NAME,
 }
 
-print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS)) # 5343
+print("Number of Expected TFRecords: {}".format(NUM_TF_RECORDS))
 
 
 def main():

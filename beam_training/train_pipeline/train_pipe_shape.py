@@ -12,15 +12,15 @@ from apache_beam.options.pipeline_options import SetupOptions
 
 
 # setup
-PROJECT_ID = 'hybrid-vertex'
-BUCKET_NAME = 'spotify-data-regimes' # 'spotify-tfrecords-blog' # Set your Bucket name
-REGION = 'us-central1' # Set the region for Dataflow jobs
+# PROJECT_ID = 'hybrid-vertex'
+# BUCKET_NAME = 'spotify-data-regimes' # 'spotify-tfrecords-blog' # Set your Bucket name
+# REGION = 'us-central1' # Set the region for Dataflow jobs
+# NETWORK = 'ucaip-haystack-vpc-network'
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
 MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
-NETWORK = 'ucaip-haystack-vpc-network'
 AUTOSCALE = 'THROUGHPUT_BASED'
 
 
@@ -166,8 +166,9 @@ def run(args):
     
     # storage
     VERSION = args['version']
+    BUCKET_NAME = args['bucket_name']
+    
     JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
-
     ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
 
     DATA_DIR = ROOT + '/data/' # Location to store data
@@ -178,9 +179,9 @@ def run(args):
     
     pipeline_args = [
         '--runner', RUNNER,
-        '--network', NETWORK,
-        '--region', REGION,
-        '--project', PROJECT_ID,
+        '--network', args['network'],
+        '--region', args['region'],
+        '--project', args['project'],
         '--staging_location', STAGING_DIR,
         '--temp_location', TEMP_DIR,
         # '--template_location', TEMPLATE_LOCATION,
