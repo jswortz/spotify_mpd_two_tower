@@ -70,9 +70,11 @@ def parse_args():
     parser.add_argument("--write_embeddings", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--profiler", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--set_jit", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--use_cross_layer", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--use_dropout", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--compute_batch_metrics", action='store_true', help="include for True; ommit for False")
     parser.add_argument('--chkpt_freq', required=False) # type=int | TODO: value could be int or string
-    # parser.add_argument('--train_prefetch', required=False)
+    parser.add_argument('--dropout_rate', type=float, required=False)
     
     return parser.parse_args()
 
@@ -170,7 +172,9 @@ def main(args):
     logging.info(f'num_data_shards: {args.num_data_shards}')
     logging.info(f'chkpt_freq: {args.chkpt_freq}')
     logging.info(f'compute_batch_metrics: {args.compute_batch_metrics}')
-    # logging.info(f'train_prefetch: {args.train_prefetch}')
+    logging.info(f'use_cross_layer: {args.use_cross_layer}')
+    logging.info(f'use_dropout: {args.use_dropout}')
+    logging.info(f'dropout_rate: {args.dropout_rate}')
     
     
     project_number = os.environ["CLOUD_ML_PROJECT_ID"]
@@ -391,9 +395,17 @@ def main(args):
     with strategy.scope():
 
         model = tt.TheTwoTowers(
-            LAYER_SIZES, 
-            vocab_dict, 
-            parsed_candidate_dataset,
+            layer_sizes=LAYER_SIZES, 
+            vocab_dict=vocab_dict, 
+            parsed_candidate_dataset=parsed_candidate_dataset,
+            embedding_dim=args.embedding_dim,
+            projection_dim=args.projection_dim,
+            seed=args.seed,
+            use_cross_layer=args.use_cross_layer,
+            use_dropout=args.use_dropout,
+            dropout_rate=args.dropout_rate,
+            # max_playlist_length=MAX_PLAYLIST_LENGTH,
+            max_tokens=args.max_tokens,
             compute_batch_metrics=args.compute_batch_metrics,
         )
             

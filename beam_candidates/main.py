@@ -1,4 +1,5 @@
 from datetime import datetime
+import sys
 
 # PROJECT_ID = 'hybrid-vertex'
 # BUCKET_NAME = 'spotify-data-regimes'
@@ -35,7 +36,7 @@ STATS_DIR = ROOT +'/stats/' # Location to store stats
 STAGING_DIR = ROOT + '/job/staging/' # Dataflow staging directory on GCP
 TEMP_DIR =  ROOT + '/job/temp/' # Dataflow temporary directory on GCP
 TF_RECORD_DIR = ROOT + '/tf-records/'
-CANDIDATE_DIR = f'{ROOT}/{GCS_SUBFOLDER}'
+CANDIDATE_DIR = ROOT + "/candidates/"
 
 QUERY = f"SELECT * FROM `{PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}`"
 
