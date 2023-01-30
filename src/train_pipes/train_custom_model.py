@@ -16,6 +16,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 )
 def train_custom_model(
     project: str,
+    location: str,
     model_version: str,
     pipeline_version: str,
     model_name: str, 
@@ -44,7 +45,7 @@ def train_custom_model(
     
     vertex_ai.init(
         project=project,
-        location='us-central1',
+        location=location,
         experiment=experiment_name,
     )
     
@@ -74,18 +75,6 @@ def train_custom_model(
     )
     
     logging.info(f'Submitting train job to Vertex AI...')
-
-    # try:
-    #     job.run(
-    #         tensorboard=tensorboard_resource_name,
-    #         service_account=f'{service_account}',
-    #         restart_job_on_worker_restart=False,
-    #         enable_web_access=True,
-    #         sync=False,
-    #     )
-    # except Exception as e:
-    #     # may fail in multi-worker to find startup script
-    #     logging.info(e)
     
     job.run(
         tensorboard=tensorboard_resource_name,
@@ -129,9 +118,6 @@ def train_custom_model(
     # ====================================================
     # Model and index artifact uris
     # ====================================================
-    
-    # "gs://jt-tfrs-output-v2/pipe-dev-2tower-tfrs-jtv10/run-20221228-172834/model-dir/candidate_model
-    # "gs://jt-tfrs-output-v2/pipe-dev-2tower-tfrs-jtv10/run-20221228-172834/model-dir/candidate_tower"
     
     query_tower_dir_uri = f"gs://{train_output_gcs_bucket}/{experiment_name}/{experiment_run}/model-dir/query_model" 
     candidate_tower_dir_uri = f"gs://{train_output_gcs_bucket}/{experiment_name}/{experiment_run}/model-dir/candidate_model"
