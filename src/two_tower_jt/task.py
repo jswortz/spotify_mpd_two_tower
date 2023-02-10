@@ -73,6 +73,7 @@ def parse_args():
     parser.add_argument("--use_cross_layer", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--use_dropout", action='store_true', help="include for True; ommit for False")
     parser.add_argument("--compute_batch_metrics", action='store_true', help="include for True; ommit for False")
+    parser.add_argument("--new_vocab", action='store_true', help="include for True; ommit for False")
     parser.add_argument('--chkpt_freq', required=False) # type=int | TODO: value could be int or string
     parser.add_argument('--dropout_rate', type=float, required=False)
     
@@ -175,6 +176,7 @@ def main(args):
     logging.info(f'use_cross_layer: {args.use_cross_layer}')
     logging.info(f'use_dropout: {args.use_dropout}')
     logging.info(f'dropout_rate: {args.dropout_rate}')
+    logging.info(f'new_vocab: {args.new_vocab}')
     
     
     project_number = os.environ["CLOUD_ML_PROJECT_ID"]
@@ -250,7 +252,15 @@ def main(args):
     # ====================================================
     logging.info(f'Downloading vocab file...')
     
-    os.system('gsutil cp gs://two-tower-models/vocabs/vocab_dict.pkl .')  # TODO - paramterize
+    if args.new_vocab:
+        # here
+        NEW_VOCAB_FILE = f'gs://{OUTPUT_BUCKET}/{args.experiment_name}/{args.experiment_run}/vocab_dict.pkl'
+        os.system(f'gsutil cp {NEW_VOCAB_FILE} .')  # TODO - paramterize
+        logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
+    else:
+        EXISTING_VOCAB_FILE = 'gs://two-tower-models/vocabs/vocab_dict.pkl'
+        os.system(f'gsutil cp {EXISTING_VOCAB_FILE} .')  # TODO - paramterize
+        logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
 
     filehandler = open('vocab_dict.pkl', 'rb')
     vocab_dict = pkl.load(filehandler)

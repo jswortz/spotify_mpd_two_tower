@@ -28,11 +28,12 @@ def train_custom_model(
     service_account: str,
     experiment_name: str,
     experiment_run: str,
+    generate_new_vocab: str,
 ) -> NamedTuple('Outputs', [
     ('job_dict_uri', str),
     ('query_tower_dir_uri', str),
     ('candidate_tower_dir_uri', str),
-    # ('candidate_index_dir_uri', str),
+    ('experiment_run_dir', str),
 ]):
     
     import logging
@@ -40,7 +41,7 @@ def train_custom_model(
     import pickle as pkl
     
     from google.cloud import aiplatform as vertex_ai
-    import google.cloud.aiplatform_v1beta1 as aip_beta
+    # import google.cloud.aiplatform_v1beta1 as aip_beta
     from google.cloud import storage
     
     vertex_ai.init(
@@ -66,6 +67,11 @@ def train_custom_model(
     # ====================================================
     # Launch Vertex job
     # ====================================================
+    
+    worker_pool_specs[0]['container_spec']['args'].append(f'--tb_resource_name={tensorboard_resource_name}')
+    
+    if generate_new_vocab == 'True':
+        worker_pool_specs[0]['container_spec']['args'].append(f'--new_vocab')
   
     job = vertex_ai.CustomJob(
         display_name=JOB_NAME,
@@ -118,9 +124,9 @@ def train_custom_model(
     # ====================================================
     # Model and index artifact uris
     # ====================================================
-    
-    query_tower_dir_uri = f"gs://{train_output_gcs_bucket}/{experiment_name}/{experiment_run}/model-dir/query_model" 
-    candidate_tower_dir_uri = f"gs://{train_output_gcs_bucket}/{experiment_name}/{experiment_run}/model-dir/candidate_model"
+    EXPERIMENT_RUN_DIR = f"gs://{train_output_gcs_bucket}/{experiment_name}/{experiment_run}"
+    query_tower_dir_uri = f"{EXPERIMENT_RUN_DIR}/model-dir/query_model" 
+    candidate_tower_dir_uri = f"{EXPERIMENT_RUN_DIR}/model-dir/candidate_model"
     # candidate_index_dir_uri = f"gs://{output_dir_gcs_bucket_name}/{experiment_name}/{experiment_run}/candidate_model"
     
     logging.info(f'query_tower_dir_uri: {query_tower_dir_uri}')
@@ -131,5 +137,5 @@ def train_custom_model(
         f'{job_dict_uri}',
         f'{query_tower_dir_uri}',
         f'{candidate_tower_dir_uri}',
-        # f'{candidate_index_dir_uri}',
+        f'{EXPERIMENT_RUN_DIR}',
     )
