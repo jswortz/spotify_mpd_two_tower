@@ -7,7 +7,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.18.1'
+        'google-cloud-aiplatform==1.21.0'
     ]
 )
 def deploy_ann_index(

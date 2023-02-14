@@ -10,6 +10,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
         'google-cloud-aiplatform==1.20.0',
         'tensorflow==2.10.1',
         'tensorflow-recommenders==0.7.2',
+        'numpy',
         # 'google-cloud-storage',
     ],
 )
@@ -21,6 +22,9 @@ def generate_candidates(
     candidate_tower_dir_uri: str,
     candidate_file_dir_bucket: str,
     candidate_file_dir_prefix: str,
+    train_output_gcs_bucket: str,
+    experiment_name: str,
+    experiment_run: str,
     experiment_run_dir: str,
 ) -> NamedTuple('Outputs', [
     ('emb_index_gcs_uri', str),
@@ -28,18 +32,17 @@ def generate_candidates(
 ]):
     import logging
     import json
-    # import numpy as np
     import pickle as pkl
     from pprint import pprint
     import time
+    import numpy as np
 
     import os
 
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+    # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
     import tensorflow as tf
     import tensorflow_recommenders as tfrs
-    import tensorflow_io as tfio
 
     from google.cloud import storage
     from google.cloud.storage.bucket import Bucket
@@ -47,58 +50,106 @@ def generate_candidates(
 
     import google.cloud.aiplatform as vertex_ai
     
+    # set clients
     vertex_ai.init(
         project=project,
         location=location,
     )
     storage_client = storage.Client(project=project)
 
+    # tf.Data confg
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
     
     # ====================================================
     # Load trained candidate tower
     # ====================================================
-    
     logging.info(f"candidate_tower_dir_uri: {candidate_tower_dir_uri}")
     
-    loaded_candidate_model = tf.saved_model.load(candidate_tower_uri)
+    loaded_candidate_model = tf.saved_model.load(candidate_tower_dir_uri)
     logging.info(f"loaded_candidate_model.signatures: {loaded_candidate_model.signatures}")
     
     candidate_predictor = loaded_candidate_model.signatures["serving_default"]
     logging.info(f"structured_outputs: {candidate_predictor.structured_outputs}")
     
+    # ===================================================
+    # set feature vars
+    # ===================================================
+    FEATURES_PREFIX = f'{experiment_name}/{experiment_run}/features'
+    logging.info(f"FEATURES_PREFIX: {FEATURES_PREFIX}")
+    
+    def download_blob(bucket_name, source_gcs_obj, local_filename):
+        """Uploads a file to the bucket."""
+        # storage_client = storage.Client(project=project_number)
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(source_gcs_obj)
+        blob.download_to_filename(local_filename)
+        
+        filehandler = open(f'{local_filename}', 'rb')
+        loaded_dict = pkl.load(filehandler)
+        filehandler.close()
+        
+        logging.info(f"File {local_filename} downloaded from gs://{bucket_name}/{source_gcs_obj}")
+        
+        return loaded_dict
+    
+    # ===================================================
+    # load pickled Candidate features
+    # ===================================================
+    
+    # candidate features
+    CAND_FEAT_FILENAME = 'candidate_feats_dict.pkl'
+    CAND_FEAT_GCS_OBJ = f'{FEATURES_PREFIX}/{CAND_FEAT_FILENAME}'
+    LOADED_CANDIDATE_DICT = f'loaded_{CAND_FEAT_FILENAME}'
+    
+    loaded_candidate_features_dict = download_blob(
+        train_output_gcs_bucket,
+        CAND_FEAT_GCS_OBJ,
+        LOADED_CANDIDATE_DICT
+    )
+#     logging.info(f"CAND_FEAT_FILENAME: {CAND_FEAT_FILENAME}; CAND_FEAT_GCS_OBJ:{CAND_FEAT_GCS_OBJ}; LOADED_CANDIDATE_DICT: {LOADED_CANDIDATE_DICT}")
+    
+#     # os.system(f'gsutil cp gs://{train_output_gcs_bucket}/{CAND_FEAT_GCS_OBJ} {LOADED_CANDIDATE_DICT}')
+#     bucket = storage_client.bucket(train_output_gcs_bucket)
+#     blob = bucket.blob(CAND_FEAT_GCS_OBJ)
+#     blob.download_to_filename(LOADED_CANDIDATE_DICT)
+    
+#     filehandler = open(f'{LOADED_CANDIDATE_DICT}', 'rb')
+#     loaded_candidate_features_dict = pkl.load(filehandler)
+#     filehandler.close()
+#     logging.info(f"loaded_candidate_features_dict: {loaded_candidate_features_dict}")
+    
     # ====================================================
     # Features and Helper Functions
     # ====================================================
     
-    candidate_features = {
-        "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-        "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-        "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-        "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-        "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-        "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        # new
-        # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-        "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    }
+    # candidate_features = {
+    #     "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
+    #     "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
+    #     "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
+    #     "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
+    #     "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
+    #     "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     # new
+    #     # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    #     "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+    #     "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    # }
     
     def parse_candidate_tfrecord_fn(example):
         """
@@ -107,7 +158,7 @@ def generate_candidates(
         # example = tf.io.parse_single_example(
         example = tf.io.parse_example(
             example, 
-            features=candidate_features
+            features=loaded_candidate_features_dict
         )
         return example
 
@@ -144,7 +195,7 @@ def generate_candidates(
     
     start_time = time.time()
 
-    embs_iter = parsed_candidate_dataset.batch(1).map(
+    embs_iter = parsed_candidate_dataset.batch(1000).map(
         lambda data: candidate_predictor(
             track_uri_can = data["track_uri_can"],
             track_name_can = data['track_name_can'],
@@ -179,19 +230,18 @@ def generate_candidates(
     end_time = time.time()
     elapsed_time = int((end_time - start_time) / 60)
     logging.info(f"elapsed_time: {elapsed_time}")
-
     logging.info(f"Length of embs: {len(embs)}")
     logging.info(f"embeddings[0]: {embs[0]}")
     
     # ====================================================
     # prep Track IDs and Vectors for JSON
     # ====================================================
-    
     logging.info("Cleaning embeddings and track IDs...")
     start_time = time.time()
-    cleaned_embs = [x['output_1'].numpy()[0] for x in embs] #clean up the output
-    end_time = time.time()
     
+    cleaned_embs = [x['output_1'].numpy()[0] for x in embs] #clean up the output
+    
+    end_time = time.time()
     elapsed_time = int((end_time - start_time) / 60)
     logging.info(f"elapsed_time: {elapsed_time}")
     logging.info(f"Length of cleaned_embs: {len(cleaned_embs)}")
@@ -199,11 +249,27 @@ def generate_candidates(
     # clean track IDs
     track_uris = [x['track_uri_can'].numpy() for x in parsed_candidate_dataset]
     logging.info(f"Length of track_uris: {len(track_uris)}")
+    
     track_uris_decoded = [z.decode("utf-8") for z in track_uris]
     logging.info(f"Length of track_uris_decoded: {len(track_uris_decoded)}")
     
+    # check for bad records
+    bad_records = []
+
+    for i, emb in enumerate(cleaned_embs):
+        bool_emb = np.isnan(emb)
+        for val in bool_emb:
+            if val:
+                bad_records.append(i)
+
+    bad_record_filter = np.unique(bad_records)
+
+    logging.info(f"bad_records: {len(bad_records)}")
+    logging.info(f"bad_record_filter: {len(bad_record_filter)}")
+    
     # ZIP together
     logging.info("Zipping IDs and vectors ...")
+    
     track_uris_valid = []
     emb_valid = []
 
@@ -215,9 +281,13 @@ def generate_candidates(
             track_uris_valid.append(t_uri)
             emb_valid.append(embed)
             
+    logging.info(f"track_uris_valid[0]: {track_uris_valid[0]}")
+    logging.info(f"bad_records: {len(bad_records)}")
+            
+    # ====================================================
     # writting JSON file to GCS
+    # ====================================================
     TIMESTAMP = time.strftime("%Y%m%d-%H%M%S")
-
     embeddings_index_filename = f'candidate_embs_{version}_{TIMESTAMP}.json'
 
     with open(f'{embeddings_index_filename}', 'w') as f:

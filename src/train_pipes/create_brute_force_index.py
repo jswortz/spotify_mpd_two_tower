@@ -7,7 +7,8 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.20.0',
+        'google-cloud-aiplatform==1.21.0',
+        'google-api-core==2.10.0',
         # 'google-cloud-storage',
     ],
 )
@@ -62,7 +63,7 @@ def create_brute_force_index(
     
     brute_force_index = vertex_ai.MatchingEngineIndex.create_brute_force_index(
         display_name=display_name,
-        contents_delta_uri=f'{emb_index_gcs_uri}/', # emb_index_gcs_uri,
+        contents_delta_uri=f'{emb_index_gcs_uri}', # emb_index_gcs_uri,
         dimensions=dimensions,
         # approximate_neighbors_count=approximate_neighbors_count,
         distance_measure_type=distance_measure_type,

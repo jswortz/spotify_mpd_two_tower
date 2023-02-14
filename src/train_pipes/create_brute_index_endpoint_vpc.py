@@ -7,7 +7,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.20.0',
+        'google-cloud-aiplatform==1.21.0',
         # 'google-cloud-storage',
     ],
 )
@@ -20,11 +20,13 @@ def create_brute_index_endpoint_vpc(
     vpc_network_name: str,
     brute_index_endpoint_display_name: str,
     brute_index_endpoint_description: str,
+    brute_force_index_resource_uri: str,
 ) -> NamedTuple('Outputs', [
     ('vpc_network_resource_uri', str),
     ('brute_index_endpoint_resource_uri', str),
     ('brute_index_endpoint', Artifact),
     ('brute_index_endpoint_display_name', str),
+    ('brute_force_index_resource_uri', str),
 ]):
 
     import logging
@@ -54,5 +56,6 @@ def create_brute_index_endpoint_vpc(
       f'{vpc_network_resource_uri}',
       f'{brute_index_endpoint_resource_uri}',
       brute_index_endpoint,
-      f'{brute_index_endpoint_display_name}'
+      f'{brute_index_endpoint_display_name}',
+      f'{brute_force_index_resource_uri}',
     )

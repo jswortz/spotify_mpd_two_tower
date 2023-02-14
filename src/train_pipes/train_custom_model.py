@@ -28,7 +28,7 @@ def train_custom_model(
     service_account: str,
     experiment_name: str,
     experiment_run: str,
-    generate_new_vocab: str,
+    generate_new_vocab: bool,
 ) -> NamedTuple('Outputs', [
     ('job_dict_uri', str),
     ('query_tower_dir_uri', str),
