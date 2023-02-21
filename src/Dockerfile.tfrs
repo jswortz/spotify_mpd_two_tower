@@ -1,0 +1,15 @@
+
+# FROM tensorflow/tensorflow:2.10.1-gpu
+FROM gcr.io/deeplearning-platform-release/tf-gpu.2-10
+
+WORKDIR /src
+
+# Copies the trainer code to the docker image.
+COPY two_tower_jt/* two_tower_jt/ 
+
+RUN pip install -r two_tower_jt/requirements.txt
+
+RUN apt update && apt -y install nvtop
+
+# # Sets up the entry point to invoke the trainer.
+# # ENTRYPOINT ["python", "-m", "two_tower_jt.task"]

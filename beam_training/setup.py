@@ -7,7 +7,7 @@ import setuptools
 NAME = 'create_tfrecords_training'
 VERSION = '1.0'
 REQUIRED_PACKAGES = [
-    'apache-beam[gcp]==2.41.0',
+    'apache-beam[gcp]==2.43.0',
     'tensorflow==2.8.0',
     'gcsfs'
     ]

@@ -1,0 +1,6 @@
+
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', '$_IMAGE_URI', '$_FILE_LOCATION', '-f', '$_FILE_LOCATION/Dockerfile.$_DOCKERNAME']
+images:
+- '$_IMAGE_URI'
