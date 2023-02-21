@@ -35,7 +35,7 @@ def deploy_brute_index(
         location=location,
     )
     TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
-    deployed_brute_force_index_name = deployed_brute_force_index_name.replace('_', '-')
+    deployed_brute_force_index_name = deployed_brute_force_index_name.replace('-', '_')
     logging.info(f"deployed_brute_force_index_name: {deployed_brute_force_index_name}")
 
     brute_index = vertex_ai.MatchingEngineIndex(
@@ -51,6 +51,8 @@ def deploy_brute_index(
     )
 
     logging.info(f"index_endpoint.deployed_indexes: {index_endpoint.deployed_indexes}")
+    INDEX_ID = index_endpoint.deployed_indexes[0].id
+    logging.info(f"INDEX_ID: {INDEX_ID}")
 
     return (
       f'{index_endpoint_resource_uri}',

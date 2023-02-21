@@ -7,7 +7,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.20.0',
+        'google-cloud-aiplatform==1.21.0',
         'tensorflow==2.10.1',
         'tensorflow-recommenders==0.7.2',
         'numpy',
@@ -107,49 +107,10 @@ def generate_candidates(
         CAND_FEAT_GCS_OBJ,
         LOADED_CANDIDATE_DICT
     )
-#     logging.info(f"CAND_FEAT_FILENAME: {CAND_FEAT_FILENAME}; CAND_FEAT_GCS_OBJ:{CAND_FEAT_GCS_OBJ}; LOADED_CANDIDATE_DICT: {LOADED_CANDIDATE_DICT}")
-    
-#     # os.system(f'gsutil cp gs://{train_output_gcs_bucket}/{CAND_FEAT_GCS_OBJ} {LOADED_CANDIDATE_DICT}')
-#     bucket = storage_client.bucket(train_output_gcs_bucket)
-#     blob = bucket.blob(CAND_FEAT_GCS_OBJ)
-#     blob.download_to_filename(LOADED_CANDIDATE_DICT)
-    
-#     filehandler = open(f'{LOADED_CANDIDATE_DICT}', 'rb')
-#     loaded_candidate_features_dict = pkl.load(filehandler)
-#     filehandler.close()
-#     logging.info(f"loaded_candidate_features_dict: {loaded_candidate_features_dict}")
     
     # ====================================================
     # Features and Helper Functions
     # ====================================================
-    
-    # candidate_features = {
-    #     "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-    #     "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-    #     "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    #     "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    #     "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    #     "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     # new
-    #     # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    #     "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    #     "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    # }
     
     def parse_candidate_tfrecord_fn(example):
         """

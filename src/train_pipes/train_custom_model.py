@@ -6,7 +6,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image='python:3.9',
     packages_to_install=[
-        'google-cloud-aiplatform==1.20.0',
+        'google-cloud-aiplatform==1.21.0',
         # 'tensorflow==2.9.2',
         # 'tensorflow-recommenders==0.7.0',
         'numpy',

@@ -8,7 +8,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
     base_image="python:3.9",
     packages_to_install=[
         'google-cloud-aiplatform==1.21.0',
-        'google-api-core==2.10.0',
+        # 'google-api-core==2.10.0',
         # 'google-cloud-storage',
     ],
 )
@@ -51,7 +51,7 @@ def create_brute_force_index(
     logging.info("PROJECT_ID: {}".format(project))
     logging.info("REGION: {}".format(location))
     
-    display_name = f'{brute_force_index_display_name}-{VERSION}'
+    display_name = f'{brute_force_index_display_name}_{VERSION}'
     
     logging.info(f"display_name: {display_name}")
     
@@ -69,7 +69,7 @@ def create_brute_force_index(
         distance_measure_type=distance_measure_type,
         description=brute_force_index_description,
         # labels=brute_force_index_labels,
-        # sync=True,
+        sync=True,
     )
     brute_force_index_resource_uri = brute_force_index.resource_name
     print("brute_force_index_resource_uri:",brute_force_index_resource_uri) 

@@ -498,6 +498,8 @@ def main(args):
         ex_type, ex_value, ex_traceback = sys.exc_info()
         print("*** Unexpected:", ex_type.__name__, ex_value)
         traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
+        
+    logging.info('The profiler initiated...')
     
     logging.info('Starting training loop...')
     

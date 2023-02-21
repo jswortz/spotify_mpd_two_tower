@@ -8,7 +8,7 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
     base_image="python:3.9",
     packages_to_install=[
         'google-cloud-aiplatform==1.21.0',
-        'google-api-core==2.10.0'
+        # 'google-api-core==2.10.0'
         # 'google-cloud-storage',
     ],
 )
@@ -74,7 +74,7 @@ def create_ann_index(
         leaf_nodes_to_search_percent=leaf_nodes_to_search_percent,
         description=ann_index_description,
         # labels=ann_index_labels,
-        # sync=True,
+        sync=True,
     )
 
     end = time.time()
