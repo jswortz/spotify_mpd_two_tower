@@ -10,6 +10,3 @@ COPY two_tower_jt/* two_tower_jt/
 RUN pip install -r two_tower_jt/requirements.txt
 
 RUN apt update && apt -y install nvtop
-
-# # Sets up the entry point to invoke the trainer.
-# # ENTRYPOINT ["python", "-m", "two_tower_jt.task"]
