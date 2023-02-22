@@ -14,15 +14,21 @@ The end to end example (with public data) follows this architecture:
 
 3. [03-build-model](03-build-model.ipynb) this reads the tfrecords created from Dataflow and constructs a Tensorflow Recommender model for training on a single machine. Note settings tuned for a `high-gpu` single machine, single A100 gpu and may require different batch sizes for different configurations. Note many of the configurations were found by querying distinct counts for hashing functions and average/variance queries to get the settings for normalization.
 
-4. [04-train-pipeline](04-train-pipeline.ipynb) this shows how to productionize the training using [Vertex Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction). Utilizes custom Pipeline Components as well as prebuilt like `vertex_ai.CustomJob`.
+4. [04-custom-train](04-custom-train.ipynb) this shows how scale model training by submitting a training package to Vertex AI Training via the `vertex_ai.CustomJob` API.
 
 5. [05-candidate-generation](05-candidate-generation.ipynb) This notebook covers how to manually make calls to the deployed query tower model. It covers how to generate embeddings that will be used for queries to the [ANN Matching Engine service](https://cloud.google.com/vertex-ai/docs/matching-engine/overview)
 
 6. [06-matching-engine](06-matching-engine.ipynb) this covers how to enable VPC network peering for Matching Engine, and shows how to set up different search indexes. It covers how to benchmark speed/recall tradeoff vs. brute force search queries. [See more on Matching Engine speed/recall benchmarks here](https://ai.googleblog.com/2020/07/announcing-scann-efficient-vector.html). Note that ScaNN is the algorithm Matching Engine uses 
 
-![](https://1.bp.blogspot.com/--mbMV8fQY28/XxsvbGL_l-I/AAAAAAAAGQ0/Br9B3XGnBa07barUxC4XTi8hSDxYzwAEgCLcBGAsYHQ/s640/image5.png)
+7. [07-train-pipeline](07-train-pipeline.ipynb) this shows how to orchestrate all the previous steps using [Vertex Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction). Demonstrates how to build custom pipeline components and use them together with prebuilt components 
 
-7. [03-build-model](03-build-model.ipynb) This final notebook lets you use the recommender model you built on your own playlists. This uses the `spotipy` [library](https://pypi.org/project/spotipy/) to get the features of songs you listen to to validate the results.
+8. [08-recs-for-your-spotify](08-recs-for-your-spotify.ipynb) This final notebook lets you use the recommender model to recommend tracks for your Spotify playlists. This uses the `spotipy` [library](https://pypi.org/project/spotipy/) to get the features of songs you listen to to validate the results.
+
+## Vertex Matching Engine
+
+#### TODO
+
+![](https://1.bp.blogspot.com/--mbMV8fQY28/XxsvbGL_l-I/AAAAAAAAGQ0/Br9B3XGnBa07barUxC4XTi8hSDxYzwAEgCLcBGAsYHQ/s640/image5.png)
 
 
 ## Creating a Google Cloud project
