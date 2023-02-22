@@ -258,7 +258,8 @@ def main(args):
         os.system(f'gsutil cp {NEW_VOCAB_FILE} .')  # TODO - paramterize
         logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
     else:
-        EXISTING_VOCAB_FILE = 'gs://two-tower-models/vocabs/vocab_dict.pkl'
+        # EXISTING_VOCAB_FILE = 'gs://two-tower-models/vocabs/vocab_dict.pkl'
+        EXISTING_VOCAB_FILE = f'gs://{OUTPUT_BUCKET}/{args.experiment_name}/{args.experiment_run}/vocab_dict.pkl' # TODO - testing
         os.system(f'gsutil cp {EXISTING_VOCAB_FILE} .')  # TODO - paramterize
         logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
 
