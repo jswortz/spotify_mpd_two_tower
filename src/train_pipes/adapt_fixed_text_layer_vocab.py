@@ -96,17 +96,6 @@ def adapt_fixed_text_layer_vocab(
         CAND_FEAT_GCS_OBJ,
         LOADED_CANDIDATE_DICT
     )
-    # logging.info(f"CAND_FEAT_FILENAME: {CAND_FEAT_FILENAME}; CAND_FEAT_GCS_OBJ:{CAND_FEAT_GCS_OBJ}; LOADED_CANDIDATE_DICT: {LOADED_CANDIDATE_DICT}")
-    
-#     # os.system(f'gsutil cp gs://{train_output_gcs_bucket}/{CAND_FEAT_GCS_OBJ} {LOADED_CANDIDATE_DICT}')
-#     bucket = storage_client.bucket(train_output_gcs_bucket)
-#     blob = bucket.blob(CAND_FEAT_GCS_OBJ)
-#     blob.download_to_filename(LOADED_CANDIDATE_DICT)
-    
-#     filehandler = open(f'{LOADED_CANDIDATE_DICT}', 'rb')
-#     loaded_candidate_features_dict = pkl.load(filehandler)
-#     filehandler.close()
-#     logging.info(f"loaded_candidate_features_dict: {loaded_candidate_features_dict}")
     
     all_features_dict.update(loaded_candidate_features_dict)
     logging.info(f"all_features_dict: {all_features_dict}")
@@ -125,17 +114,6 @@ def adapt_fixed_text_layer_vocab(
         QUERY_FEAT_GCS_OBJ,
         LOADED_QUERY_DICT
     )
-#     logging.info(f"QUERY_FEAT_FILENAME: {QUERY_FEAT_FILENAME}; QUERY_FEAT_GCS_OBJ:{QUERY_FEAT_GCS_OBJ}; LOADED_QUERY_DICT: {LOADED_QUERY_DICT}")
-    
-#     # os.system(f'gsutil cp gs://{train_output_gcs_bucket}/{QUERY_FEATURES_GCS_OBJ} {LOADED_QUERY_DICT}')
-#     bucket = storage_client.bucket(train_output_gcs_bucket)
-#     blob = bucket.blob(QUERY_FEAT_GCS_OBJ)
-#     blob.download_to_filename(LOADED_QUERY_DICT)
-    
-#     filehandler = open(f'{LOADED_QUERY_DICT}', 'rb')
-#     loaded_query_features_dict = pkl.load(filehandler)
-#     filehandler.close()
-#     logging.info(f"loaded_query_features_dict: {loaded_query_features_dict}")
     
     all_features_dict.update(loaded_query_features_dict)
     logging.info(f"all_features_dict: {all_features_dict}")
@@ -143,109 +121,6 @@ def adapt_fixed_text_layer_vocab(
     # ===================================================
     # tfrecord parser
     # ===================================================
-    
-#     candidate_features = {
-#         "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-#         "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-#         "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-#         "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-#         "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-#         "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         # new
-#         # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#     }
-
-#     feats = {
-#         # ===================================================
-#         # candidate track features
-#         # ===================================================
-#         "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-#         "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-#         "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-#         "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-#         "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-#         "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-#         "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         "time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
-
-#         # ===================================================
-#         # summary playlist features
-#         # ===================================================
-#         "pl_name_src" : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-#         'pl_collaborative_src' : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-#         # 'num_pl_followers_src' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-#         'pl_duration_ms_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         'num_pl_songs_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), # n_songs_pl_new | num_pl_songs_new
-#         'num_pl_artists_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-#         'num_pl_albums_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-#         # 'avg_track_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-#         # 'avg_artist_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-#         # 'avg_art_followers_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-
-#         # ===================================================
-#         # ragged playlist features
-#         # ===================================================
-#         # bytes / string
-#         "track_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "artist_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "artist_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "album_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "album_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "artist_genres_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         # "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
-
-#         # Float List
-#         "duration_ms_songs_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "artist_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "artists_followers_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_danceability_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_energy_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_loudness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_speechiness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_acousticness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_instrumentalness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_liveness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_valence_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#         "track_tempo_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-#     }
     
     # parsing function
     def parse_tfrecord(example):

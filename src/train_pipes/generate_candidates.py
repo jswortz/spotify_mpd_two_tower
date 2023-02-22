@@ -156,7 +156,8 @@ def generate_candidates(
     
     start_time = time.time()
 
-    embs_iter = parsed_candidate_dataset.batch(1000).map(
+    # TODO: parameterize
+    embs_iter = parsed_candidate_dataset.batch(1).map(
         lambda data: candidate_predictor(
             track_uri_can = data["track_uri_can"],
             track_name_can = data['track_name_can'],
