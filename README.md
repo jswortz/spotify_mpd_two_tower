@@ -8,7 +8,9 @@ The end to end example (with public data) follows this architecture:
 
 ### Notebook Overview
 
-1. [01-bq-data-prep](01-bq-data-prep.ipynb) Extract from the zip file and upload to BQ. This notebook then enriches features for the playlist songs and cross-joins songs with features (expected rows = n_songs x n_playlists). Additional preprocessing to remove after-the-fact (later position songs) from the newly generated samples, then create a clean train table, and flatten structs or use arrays
+0. [00-load-core-data-to-bq](00-load-core-data-to-bq.ipynb) Extract from the zip file and upload to BQ. This notebook then enriches features for the playlist songs
+
+1. [01-bq-data-prep](01-bq-data-prep.ipynb) Join the features and unpack the BQ data then use BQ to cross-joins songs with features (expected rows = n_songs x n_playlists). Additional preprocessing to remove after-the-fact (later position songs) from the newly generated samples, then create a clean train table, and flatten structs or use arrays
 
 2. [02-tfrecord-beam-pipeline](02-tfrecord-beam-pipeline.ipynb) uses beam to download the training tables to gcs and serialize the data into tfrecords. This notebook calls on `beam_training` and `beam_candidates` module for the Dataflow job
 
