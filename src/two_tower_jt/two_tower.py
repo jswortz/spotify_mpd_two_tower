@@ -11,7 +11,6 @@ import os
 from pprint import pprint
 
 # TODO: formatting for below import 
-import train_config as cfg # needed for Vertex Train package
 # from . import train_config as cfg # needed for `02-build-model.ipynb`
 
 # EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
@@ -20,7 +19,7 @@ import train_config as cfg # needed for Vertex Train package
 # USE_CROSS_LAYER = cfg.USE_CROSS_LAYER   # True
 # DROPOUT = cfg.USE_DROPOUT               # 'False'
 # DROPOUT_RATE = cfg.DROPOUT_RATE         # '0.33'
-MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH   # 5
+MAX_PLAYLIST_LENGTH = 5   # 5
 # MAX_TOKENS = cfg.MAX_TOKENS
 # PROJECT_ID = cfg.PROJECT_ID # '20000'
 

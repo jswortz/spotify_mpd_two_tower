@@ -71,7 +71,7 @@ class candidates_to_tfexample(beam.DoFn):
                     "track_liveness_can": _float_feature(data['track_liveness_can']),
                     "track_valence_can": _float_feature(data['track_valence_can']),
                     "track_tempo_can": _float_feature(data['track_tempo_can']),
-                    "time_signature_can": _string_array(data['time_signature_can']),
+                    "track_time_signature_can": _string_array(data['time_signature_can']),
 
                 }
             )

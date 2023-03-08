@@ -24,7 +24,7 @@ TABLE_SPEC = f'{PROJECT_ID}:{BQ_DATASET}.{BQ_TABLE}' # need " : " between projec
 
 # Pipeline Params
 TIMESTAMP = datetime.utcnow().strftime('%y%m%d-%H%M%S')
-JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
+JOB_NAME = f'spotify-bq-tfrecords-candidates-{VERSION}-{TIMESTAMP}'
 MAX_WORKERS = '20'
 RUNNER = 'DataflowRunner'
 
