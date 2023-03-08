@@ -53,9 +53,9 @@ def _string_array(value, shape=1):
     Returns a bytes_list from a string / byte.
     """
     if type(value) == list:
-        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[v.encode('utf-8') for v in value]))
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(v).encode('utf-8') for v in value]))
     else:
-        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.encode('utf-8')]))
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(value).encode('utf-8')]))
 
 def _float_feature(value, shape=1):
     """Returns a float_list from a float / double."""
@@ -122,7 +122,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_liveness_can": _float_feature(data['track_liveness_can']),
             "track_valence_can": _float_feature(data['track_valence_can']),
             "track_tempo_can": _float_feature(data['track_tempo_can']),
-            "time_signature_can": _string_array(data['time_signature_can']), # track_time_signature_can
+            "track_time_signature_can": _string_array(data['track_time_signature_can']), # track_time_signature_can
             
             # ===================================================
             # Set playlist_seed_tracks (list types)
@@ -139,7 +139,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             # "tracks_playlist_titles_pl": _string_array(data['tracks_playlist_titles_pl']),
             "track_key_pl": _string_array(data['track_key_pl']),
             "track_mode_pl": _string_array(data['track_mode_pl']),
-            "time_signature_pl": _string_array(data['time_signature_pl']),
+            "track_time_signature_pl": _string_array(data['track_time_signature_pl']),
             
             # Float List
             "duration_ms_songs_pl": _float_feature(data['duration_ms_songs_pl']),

@@ -81,7 +81,7 @@ candidate_features = {
     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+    "track_time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
 }
 
 feats = {
@@ -111,7 +111,7 @@ feats = {
     "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
     "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
+    "track_time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
     
     # ===================================================
     # summary playlist features
@@ -1256,7 +1256,7 @@ class Candidate_Track_Model(tf.keras.Model):
                 self.track_liveness_can_embedding(data['track_liveness_can']),
                 self.track_valence_can_embedding(data['track_valence_can']),
                 self.track_tempo_can_embedding(data['track_tempo_can']),
-                self.time_signature_can_embedding(data['time_signature_can']),
+                self.time_signature_can_embedding(data['track_time_signature_can']),
             ], axis=1
         )
         

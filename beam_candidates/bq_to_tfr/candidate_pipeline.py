@@ -21,7 +21,7 @@ def _string_array(value):
     """
     Returns a bytes_list from a string / byte.
     """
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.encode('utf-8')]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[str(value).encode('utf-8')]))
 
 def _float_feature(value):
     """Returns a float_list from a float / double."""
