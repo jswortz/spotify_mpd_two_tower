@@ -1,6 +1,7 @@
 # Feature Engineering
 
 ![alt text](https://github.com/jswortz/spotify_mpd_two_tower/blob/main/img/2tower-feature-processing-f12.jpg)
+> Illustration of feature processing from input to concatenated output. Text features are generated via n-grams. Integer indexes of n-grams are passed to an embedding layer. Hashing produces unique integers up to 1,000,000; values passed to an embedding layer. If using pre-trained embeddings, these are passed through the tower without transformation and concatenated with the other embedding representations.
 
 ## `Hashing` vs `StringLookup()` layers
 Hashing is generally recommended when fast performance is needed and is preferred over string lookups because it skips the need for a lookup table. Setting the proper bin size for the hashing layer is critical. When there are more unique values than hashing bins, values start getting placed into the same bins, and this can negatively impact our recommendations. This is commonly referred to as a hashing collision, and can be avoided when building the model by allocating enough bins for the unique values. See [turning categorical features into embeddings](https://www.tensorflow.org/recommenders/examples/featurization#turning_categorical_features_into_embeddings) for more details. 
