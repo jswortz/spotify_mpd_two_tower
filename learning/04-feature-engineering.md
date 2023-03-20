@@ -1,5 +1,10 @@
 # Feature Engineering
 
+As the factorization-based models offer a pure collaborative filtering approach, the advanced feature processing with NDR architectures allow us to extend this to also incorporate aspects of [content-based filtering](https://developers.google.com/machine-learning/recommendation/content-based/basics). By including additional features describing playlists and tracks, we give NDR models the opportunity to learn semantic concepts about `<playlist, track>` pairs. The ability to include label features (i.e., features about candidate tracks) also means our trained candidate tower can compute an embedding vector for candidate tracks not observed during training (i.e., cold-start). Conceptually, we can think of such a new candidate track embedding compiling all the content-based and collaborative filtering information learned from candidate tracks with the same or similar feature values.
+
+With this flexibility to add multi-modal features, we just need to process them to produce embedding vectors with the same dimensions so they can be concatenated and fed to subsequent deep and cross layers. This means if we use pre-trained embeddings as an input feature, we would pass these through to the concatenation layer 
+
+
 ![alt text](https://github.com/jswortz/spotify_mpd_two_tower/blob/main/img/2tower-feature-processing-f12.jpg)
 > Illustration of feature processing from input to concatenated output. Text features are generated via n-grams. Integer indexes of n-grams are passed to an embedding layer. Hashing produces unique integers up to 1,000,000; values passed to an embedding layer. If using pre-trained embeddings, these are passed through the tower without transformation and concatenated with the other embedding representations.
 
