@@ -14,5 +14,7 @@ Hashing is generally recommended when fast performance is needed and is preferre
 ## `TextVectorization()` layers
 The key to text features is to understand if creating additional NLP features with the [TextVectorization](https://www.tensorflow.org/api_docs/python/tf/keras/layers/TextVectorization) layer is helpful. If additional context derived from the text feature is minimal, it may not be worth the cost to model training. This layer needs to be adapted from the source dataset, meaning the layer requires a scan of the training data to create lookup dictionaries for the top N n-grams (set by max_tokens). 
 
+## feature engineering decision tree
+
 ![alt text](https://github.com/jswortz/spotify_mpd_two_tower/blob/main/img/feat-engineering-decision-tree-f13.jpg)
 > Decision tree to guide feature engineering strategy
