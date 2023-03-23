@@ -12,6 +12,7 @@ from pprint import pprint
 
 # TODO: formatting for below import 
 # from . import train_config as cfg # needed for `02-build-model.ipynb`
+import train_config as cfg
 
 # EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
 # PROJECTION_DIM = cfg.PROJECTION_DIM     # 50
@@ -19,7 +20,8 @@ from pprint import pprint
 # USE_CROSS_LAYER = cfg.USE_CROSS_LAYER   # True
 # DROPOUT = cfg.USE_DROPOUT               # 'False'
 # DROPOUT_RATE = cfg.DROPOUT_RATE         # '0.33'
-MAX_PLAYLIST_LENGTH = 5   # 5
+MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
+# MAX_PLAYLIST_LENGTH = 15   # 5
 # MAX_TOKENS = cfg.MAX_TOKENS
 # PROJECT_ID = cfg.PROJECT_ID # '20000'
 
@@ -140,7 +142,7 @@ feats = {
     # "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
     "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
+    "track_time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), # track_time_signature_pl | time_signature_pl
 
     # Float List
     "duration_ms_songs_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
@@ -820,7 +822,7 @@ class Playlist_Model(tf.keras.Model):
                 self.track_liveness_pl_embedding(data["track_liveness_pl"]),
                 self.track_valence_pl_embedding(data["track_valence_pl"]),
                 self.track_tempo_pl_embedding(data["track_tempo_pl"]),
-                self.time_signature_pl_embedding(data["time_signature_pl"]),
+                self.time_signature_pl_embedding(data["track_time_signature_pl"]),
                 
             ], axis=1)
         

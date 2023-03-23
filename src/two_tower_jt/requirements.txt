@@ -1,4 +1,4 @@
-google-cloud-aiplatform>=1.21.0
+google-cloud-aiplatform>=1.20.0
 tensorflow-recommenders==0.7.2
 tensorboard==2.10.1
 tensorboard-data-server==0.6.1
