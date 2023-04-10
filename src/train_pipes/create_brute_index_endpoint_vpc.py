@@ -7,8 +7,8 @@ from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.21.0',
-        # 'google-cloud-storage',
+        'google-cloud-aiplatform==1.22.1',
+        'google-api-core==2.10.0',
     ],
 )
 def create_brute_index_endpoint_vpc(
