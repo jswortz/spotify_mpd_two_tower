@@ -5,6 +5,9 @@ import logging
 
 from google.cloud import storage
 
+PROJECT_ID='hybrid-vertex'
+MAX_PLAYLIST_LENGTH = 5
+
 # ====================================================
 # Helper functions
 # ====================================================

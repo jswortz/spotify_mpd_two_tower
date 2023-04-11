@@ -10,14 +10,11 @@ import os
 from pprint import pprint
 
 # import modules
-import train_config as cfg
-import train_utils
-import feature_sets
-
-# uncomment when running `03-build-model.ipynb`
-# from . import train_config as cfg
-# from . import feature_sets
-# from . import train_utils
+# import train_config as cfg
+# import train_utils
+# import feature_sets
+from . import feature_sets
+from . import train_utils
 
 # from src.two_tower_jt import train_config as cfg
 # from src.two_tower_jt import train_utils, feature_sets
@@ -39,8 +36,9 @@ import feature_sets
 #     parse_candidate_tfrecord_fn
 # )
 
-MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
-PROJECT_ID = cfg.PROJECT_ID
+# TODO
+MAX_PLAYLIST_LENGTH = 5 #cfg.MAX_PLAYLIST_LENGTH
+PROJECT_ID = 'hybrid-vertex' # cfg.PROJECT_ID
 
 # project_number = os.environ["CLOUD_ML_PROJECT_ID"]
 

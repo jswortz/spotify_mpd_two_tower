@@ -119,9 +119,20 @@ To run the notebooks successfully, follow the steps below.
 
 #### Dependencies
 
-* Tensorflow 2.8.0 LTS
-* Tensorflow recommenders 0.6.0
-* google-cloud-aiplatform==1.15.1
+```
+tensorflow==2.11.0
+tensorflow-cloud==0.1.16
+tensorflow-datasets==4.8.2
+tensorflow-estimator==2.11.0
+tensorflow-hub==0.12.0
+tensorflow-io==0.27.0
+tensorflow-io-gcs-filesystem==0.27.0
+tensorflow-metadata==1.11.0
+tensorflow-probability==0.19.0
+tensorflow-recommenders==0.7.2
+tensorflow-serving-api==2.10.1
+tensorflow-transform==1.11.0
+```
 
 `nvtop` is recommended to monitor GPU usage when tuning settings. See [here for instructions](https://sourceexample.com/article/en/1f7da1ef56689b67858ddadcbe3bf1c3/)
 

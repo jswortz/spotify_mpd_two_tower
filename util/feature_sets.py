@@ -1,12 +1,10 @@
 import tensorflow as tf
 
 # import modules
-
-# import train_config as cfg
-# import train_utils
-
 # from . import train_config as cfg
 # from . import train_utils
+
+from . import local_utils as cfg
 
 # from src.two_tower_jt import train_config as cfg
 # from src.two_tower_jt import train_utils
@@ -22,7 +20,7 @@ import tensorflow as tf
 # )
 
 
-MAX_PLAYLIST_LENGTH = 5 # cfg.MAX_PLAYLIST_LENGTH
+MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
 
 def get_candidate_features():
     '''
