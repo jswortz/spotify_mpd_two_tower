@@ -196,12 +196,6 @@ def parse_candidate_tfrecord_fn(example):
 
 import pickle as pkl
 
-# os.system('gsutil cp gs://two-tower-models/vocabs/vocab_dict.pkl .')  # TODO - paramterize
-
-# filehandler = open('vocab_dict.pkl', 'rb')
-# vocab_dict = pkl.load(filehandler)
-# filehandler.close()
-
 # ========================================
 # playlist tower
 # ========================================
