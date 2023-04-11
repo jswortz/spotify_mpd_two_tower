@@ -293,8 +293,8 @@ def main(args):
     train_files = []
     for blob in storage_client.list_blobs(f'{args.train_dir}', prefix=f'{args.train_dir_prefix}'):
         if '.tfrecords' in blob.name:
-            # train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
-            train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
+            train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # train_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
     
     train_dataset = tf.data.Dataset.from_tensor_slices(train_files).prefetch(
         tf.data.AUTOTUNE,
@@ -335,8 +335,8 @@ def main(args):
     valid_files = []
     for blob in storage_client.list_blobs(f'{args.valid_dir}', prefix=f'{args.valid_dir_prefix}'):
         if '.tfrecords' in blob.name:
-            # valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
-            valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
+            valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # valid_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
 
     valid_dataset = tf.data.Dataset.from_tensor_slices(valid_files).prefetch(
         tf.data.AUTOTUNE,
@@ -372,8 +372,8 @@ def main(args):
     candidate_files = []
     for blob in storage_client.list_blobs(f"{args.candidate_file_dir}", prefix=f'{args.candidate_files_prefix}'):
         if '.tfrecords' in blob.name:
-            # candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
-            candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
+            candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "gs://"))
+            # candidate_files.append(blob.public_url.replace("https://storage.googleapis.com/", "/gcs/"))
 
     candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
     
