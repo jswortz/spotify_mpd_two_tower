@@ -5,8 +5,10 @@ FROM gcr.io/deeplearning-platform-release/tf-gpu.2-10
 WORKDIR /src
 
 # Copies the trainer code to the docker image.
-COPY two_tower_jt/* two_tower_jt/ 
+# COPY src/two_tower_jt/* src/two_tower_jt/ 
+COPY two_tower_jt/* ./ 
 
-RUN pip install -r two_tower_jt/requirements.txt
+# RUN pip install -r two_tower_jt/requirements.txt
+RUN pip install -r ./requirements.txt
 
 RUN apt update && apt -y install nvtop

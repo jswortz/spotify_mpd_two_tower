@@ -24,15 +24,45 @@ import traceback
 from google.cloud.aiplatform.training_utils import cloud_profiler
 
 # import modules
+
+# import train_config as cfg
 import train_utils
-import train_config as cfg
 import feature_sets
 import two_tower as tt
 
 # uncomment when running `03-build-model.ipynb`
 # from . import train_config as cfg
-# from . import train_utils
 # from . import feature_sets
+# from . import train_utils
+# from . import two_tower as tt
+
+# from .two_tower_jt import train_config as cfg
+# from src.two_tower_jt import two_tower as tt
+# from src.two_tower_jt import train_utils, feature_sets
+
+# from .train_utils import (
+#     full_parse, 
+#     get_train_strategy, 
+#     _is_chief, 
+#     get_arch_from_string, 
+#     tf_if_null_return_zero, 
+#     get_buckets_20, 
+#     upload_blob
+# )
+# from .feature_sets import (
+#     get_candidate_features, 
+#     get_all_features, 
+#     full_parse, 
+#     parse_tfrecord, 
+#     parse_candidate_tfrecord_fn
+# )
+# from .train_config import (
+#     get_candidate_features, 
+#     get_all_features, 
+#     full_parse, 
+#     parse_tfrecord, 
+#     parse_candidate_tfrecord_fn
+# )
 
 # ====================================================
 # Args

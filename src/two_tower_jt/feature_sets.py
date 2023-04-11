@@ -1,11 +1,26 @@
 import tensorflow as tf
 
 # import modules
-# import train_config as cfg
-# import train_utils
 
-from . import train_config as cfg
-from . import train_utils
+import train_config as cfg
+import train_utils
+
+# from . import train_config as cfg
+# from . import train_utils
+
+# from src.two_tower_jt import train_config as cfg
+# from src.two_tower_jt import train_utils
+
+# from .train_utils import (
+#     full_parse, 
+#     get_train_strategy, 
+#     _is_chief, 
+#     get_arch_from_string, 
+#     tf_if_null_return_zero, 
+#     get_buckets_20, 
+#     upload_blob
+# )
+
 
 MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
 
@@ -164,3 +179,5 @@ def parse_candidate_tfrecord_fn(example):
     )
     
     return example
+
+# get_candidate_features, get_all_features, full_parse, parse_tfrecord, parse_candidate_tfrecord_fn

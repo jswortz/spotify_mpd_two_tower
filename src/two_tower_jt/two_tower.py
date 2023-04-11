@@ -10,25 +10,43 @@ import os
 from pprint import pprint
 
 # import modules
-# import train_config as cfg
-# import train_utils
-# import feature_sets
+import train_config as cfg
+import train_utils
+import feature_sets
+
 # uncomment when running `03-build-model.ipynb`
-from . import train_config as cfg
-from . import train_utils
-from . import feature_sets
+# from . import train_config as cfg
+# from . import feature_sets
+# from . import train_utils
+
+# from src.two_tower_jt import train_config as cfg
+# from src.two_tower_jt import train_utils, feature_sets
+
+# from .train_utils import (
+#     full_parse, 
+#     get_train_strategy, 
+#     _is_chief, 
+#     get_arch_from_string, 
+#     tf_if_null_return_zero, 
+#     get_buckets_20, 
+#     upload_blob
+# )
+# from .feature_sets import (
+#     get_candidate_features, 
+#     get_all_features, 
+#     full_parse, 
+#     parse_tfrecord, 
+#     parse_candidate_tfrecord_fn
+# )
 
 MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
+PROJECT_ID = cfg.PROJECT_ID
 
-project_number = os.environ["CLOUD_ML_PROJECT_ID"]
+# project_number = os.environ["CLOUD_ML_PROJECT_ID"]
 
 storage_client = storage.Client(
-    project=project_number
+    project=PROJECT_ID
 )
-
-# ====================================================
-# helper functions
-# ====================================================
 
 # ======================
 # Vocab Adapts
