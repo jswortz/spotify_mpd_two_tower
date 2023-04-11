@@ -181,10 +181,10 @@ def generate_candidates(
             track_liveness_can = data['track_liveness_can'],
             track_valence_can = data['track_valence_can'],
             track_tempo_can = data['track_tempo_can'],
-            time_signature_can = data['time_signature_can']
+            track_time_signature_can = data['track_time_signature_can']
         )
     )
-
+    
     embs = []
     for emb in embs_iter:
         embs.append(emb)
