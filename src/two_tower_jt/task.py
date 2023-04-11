@@ -23,6 +23,17 @@ from google.cloud import storage
 import traceback
 from google.cloud.aiplatform.training_utils import cloud_profiler
 
+# import modules
+import train_utils
+import train_config as cfg
+import feature_sets
+import two_tower as tt
+
+# uncomment when running `03-build-model.ipynb`
+# from . import train_config as cfg
+# from . import train_utils
+# from . import feature_sets
+
 # ====================================================
 # Args
 # ====================================================
@@ -80,37 +91,8 @@ def parse_args():
     return parser.parse_args()
 
 # ====================================================
-# Helper functions
-# ====================================================
-
-def tf_if_null_return_zero(val):
-    """
-    this function fills in nans to zeros - sometimes happens in embedding calcs.
-    this will clean the embedding inputs downstream
-    """
-    return(tf.clip_by_value(val, -1e12, 1e12)) # a trick to remove NANs post tf2.0
-
-def get_arch_from_string(arch_string):
-    q = arch_string.replace(']', '')
-    q = q.replace('[', '')
-    q = q.replace(" ", "")
-    return [int(x) for x in q.split(',')]
-
-def _is_chief(task_type, task_id): 
-    ''' Check for primary if multiworker training
-    '''
-    if task_type == 'chief':
-        results = 'chief'
-    else:
-        results = None
-    return results
-
-# ====================================================
 # Main
 # ====================================================
-
-import train_config as cfg
-import two_tower as tt       # import the model from the same module
 
 def main(args):
     
@@ -195,35 +177,10 @@ def main(args):
     # ====================================================
     logging.info("Detecting devices....")
     # logging.info(f'Detected Devices {str(device_lib.list_local_devices())}')
+    
     logging.info("Setting device strategy...")
     
-    # Single Machine, single compute device
-    if args.distribute == 'single':
-        if tf.config.list_physical_devices('GPU'): # TODO: replace with - tf.config.list_physical_devices('GPU') | tf.test.is_gpu_available()
-            strategy = tf.distribute.OneDeviceStrategy(device="/gpu:0")
-        else:
-            strategy = tf.distribute.OneDeviceStrategy(device="/cpu:0")
-        logging.info("Single device training")  
-    # Single Machine, multiple compute device
-    elif args.distribute == 'mirrored':
-        strategy = tf.distribute.MirroredStrategy()
-        logging.info("Mirrored Strategy distributed training")
-        gpus = tf.config.list_physical_devices('GPU')
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-    # Multi Machine, multiple compute device
-    elif args.distribute == 'multiworker':
-        strategy = tf.distribute.MultiWorkerMirroredStrategy()
-        logging.info("Multi-worker Strategy distributed training")
-        logging.info('TF_CONFIG = {}'.format(os.environ.get('TF_CONFIG', 'Not found')))
-    # Single Machine, multiple TPU devices
-    elif args.distribute == 'tpu':
-        cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
-        tf.config.experimental_connect_to_cluster(cluster_resolver)
-        tf.tpu.experimental.initialize_tpu_system(cluster_resolver)
-        strategy = tf.distribute.TPUStrategy(cluster_resolver)
-        logging.info("All devices: ", tf.config.list_logical_devices('TPU'))
-
+    strategy = train_utils.get_train_strategy(distribute_arg=args.distribute)
     logging.info(f'TF training strategy = {strategy}')
     
     NUM_REPLICAS = strategy.num_replicas_in_sync
@@ -272,17 +229,10 @@ def main(args):
     # ====================================================
     # TODO - move to seperate py module in repo?
     logging.info(f'Preparing train, valid, and candidate tfrecords...\n')
-    
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    
     # Disable intra-op parallelism to optimize for throughput instead of latency.
     options.threading.max_intra_op_parallelism = 1 # TODO 
-    
-    def full_parse(data):
-        # used for interleave - takes tensors and returns a tf.dataset
-        data = tf.data.TFRecordDataset(data)
-        return data
     
     # ==============
     # Train data
@@ -301,7 +251,7 @@ def main(args):
     )
 
     train_dataset = train_dataset.interleave( # Parallelize data reading
-        full_parse,
+        train_utils.full_parse,
         cycle_length=tf.data.AUTOTUNE,
         block_length=args.block_length,
         num_parallel_calls=tf.data.AUTOTUNE,
@@ -312,7 +262,7 @@ def main(args):
         GLOBAL_BATCH_SIZE,
         drop_remainder=True,
     ).map(
-        tt.parse_tfrecord, 
+        feature_sets.parse_tfrecord, 
         num_parallel_calls=tf.data.AUTOTUNE
     ).prefetch(
         tf.data.AUTOTUNE # GLOBAL_BATCH_SIZE*3 # tf.data.AUTOTUNE
@@ -343,7 +293,7 @@ def main(args):
     )
 
     valid_dataset = valid_dataset.interleave( # Parallelize data reading
-        full_parse,
+        train_utils.full_parse,
         num_parallel_calls=tf.data.AUTOTUNE,
         block_length=args.block_length,
         cycle_length=tf.data.AUTOTUNE, 
@@ -351,7 +301,7 @@ def main(args):
     ).batch(
         GLOBAL_BATCH_SIZE
     ).map(
-        tt.parse_tfrecord, 
+        feature_sets.parse_tfrecord, 
         num_parallel_calls=tf.data.AUTOTUNE
     # ).batch(
     #     GLOBAL_BATCH_SIZE
@@ -360,7 +310,6 @@ def main(args):
     ).with_options(
         options
     )
-
     valid_dataset = valid_dataset.cache()
     
     # ==============
@@ -378,19 +327,18 @@ def main(args):
     candidate_dataset = tf.data.Dataset.from_tensor_slices(candidate_files)
     
     parsed_candidate_dataset = candidate_dataset.interleave(
-        full_parse,
+        train_utils.full_parse,
         cycle_length=tf.data.AUTOTUNE, 
         num_parallel_calls=tf.data.AUTOTUNE,
         deterministic=False
     # ).batch(
     #     GLOBAL_BATCH_SIZE
     ).map(
-        tt.parse_candidate_tfrecord_fn, 
+        feature_sets.parse_candidate_tfrecord_fn, 
         num_parallel_calls=tf.data.AUTOTUNE
     ).with_options(
         options
     )
-
     parsed_candidate_dataset = parsed_candidate_dataset.cache()
 
     # ====================================================
@@ -398,7 +346,7 @@ def main(args):
     # ====================================================
     logging.info('Setting model adapts and compiling model...')
     
-    LAYER_SIZES = get_arch_from_string(args.layer_sizes)
+    LAYER_SIZES = train_utils.get_arch_from_string(args.layer_sizes)
     
     tf.config.optimizer.set_jit(args.set_jit) # Enable XLA.
     
@@ -437,11 +385,6 @@ def main(args):
         
     logging.info(f'TensorBoard log_dir: {log_dir}')
     
-    # model checkpoints - fault tolerance for multi-worker
-    # backup_and_restore_callback = tf.keras.callbacks.experimental.BackupAndRestore(
-    #     backup_dir=os.environ['AIP_CHECKPOINT_DIR'],
-    #     save_freq="epoch",
-    # )
     checkpoint_dir=os.environ['AIP_CHECKPOINT_DIR']
     logging.info(f'Saving model checkpoints to {checkpoint_dir}')
     
@@ -462,9 +405,8 @@ def main(args):
             log_dir=log_dir,
             histogram_freq=args.hist_frequency, 
             write_graph=True,
-            # embeddings_freq=args.embed_frequency,
             profile_batch=(25, 30),
-            update_freq='epoch',     # TODO: JT updated
+            update_freq='epoch', 
         )
         logging.info(f'Tensorboard callback should profile batches...')
         
@@ -474,22 +416,12 @@ def main(args):
             log_dir=log_dir,
             histogram_freq=args.hist_frequency, 
             write_graph=True,
-            # embeddings_freq=args.embed_frequency,
         )
         logging.info(f'Tensorboard callback NOT profiling batches...')
 
     # ====================================================
     # Train model
-    # ====================================================
-#     train_samples = 60_733_427
-#     valid_samples = 613_001
-
-#     train_steps = train_samples // GLOBAL_BATCH_SIZE
-#     val_steps = valid_samples // GLOBAL_BATCH_SIZE
-    
-    # logging.info(f'train_steps: {train_steps}')
-    # logging.info(f'val_steps: {val_steps}')
-    
+    # ====================================================    
     # Initialize profiler
     logging.info('Initializing profiler ...')
         
@@ -501,11 +433,9 @@ def main(args):
         traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
         
     logging.info('The profiler initiated...')
-    
     logging.info('Starting training loop...')
     
     start_time = time.time()
-    
     layer_history = model.fit(
         train_dataset,
         validation_data=valid_dataset,
@@ -519,15 +449,14 @@ def main(args):
         ], 
         verbose=2
     )
-
     end_time = time.time()
     
+    # val metrics
     val_keys = [v for v in layer_history.history.keys()]
     total_train_time = int((end_time - start_time) / 60)
     
     metrics_dict = {"total_train_time": total_train_time}
     logging.info(f"total_train_time: {total_train_time}")
-    
     _ = [metrics_dict.update({key: layer_history.history[key][-1]}) for key in val_keys]
     
     # evaluate model
@@ -535,13 +464,10 @@ def main(args):
         logging.info(f"beginning model eval...")
         
         start_time = time.time()
-        
         eval_dict = model.evaluate(valid_dataset, return_dict=True)
-        
         end_time = time.time()
-        
-        total_eval_time = int((end_time - start_time) / 60)
-        
+
+        total_eval_time = int((end_time - start_time) / 60)        
         logging.info(f"total_eval_time: {total_eval_time}")
         logging.info(f"eval_dict: {eval_dict}")
         
@@ -551,7 +477,11 @@ def main(args):
             filehandler = open('model_eval_dict.pkl', 'wb')
             pkl.dump(eval_dict, filehandler)
             filehandler.close()
-            tt.upload_blob(f'{OUTPUT_BUCKET}', 'model_eval_dict.pkl', f'{args.experiment_name}/{args.experiment_run}/combined-model-eval/model_eval_dict.pkl')
+            train_utils.upload_blob(
+                bucket_name=f'{OUTPUT_BUCKET}', 
+                source_file_name='model_eval_dict.pkl', 
+                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/combined-model-eval/model_eval_dict.pkl'
+            )
     
     # ====================================================
     # log Vertex Experiments
@@ -630,28 +560,34 @@ def main(args):
     # ====================================================
     
     if args.write_embeddings:
-        # TODO: 
         logging.info('Saving candidate embeddings...')
-        Local_Candidate_Embedding_Index = 'candidate_embeddings.json'
+        local_candidate_embedding_index = 'candidate_embeddings.json'
     
-        candidate_embeddings = parsed_candidate_dataset.batch(10000).map(lambda x: [x['track_uri_can'], tf_if_null_return_zero(model.candidate_tower(x))])
+        candidate_embeddings = parsed_candidate_dataset.batch(10000).map(
+            lambda x: [
+                x['track_uri_can'], 
+                train_utils.tf_if_null_return_zero(
+                    model.candidate_tower(x)
+                )
+            ]
+        )
     
         # Save to the required format
         for batch in candidate_embeddings:
             songs, embeddings = batch
-            with open(f"{Local_Candidate_Embedding_Index}", 'a') as f:
+            with open(f"{local_candidate_embedding_index}", 'a') as f:
                 for song, emb in zip(songs.numpy(), embeddings.numpy()):
                     f.write('{"id":"' + str(song) + '","embedding":[' + ",".join(str(x) for x in list(emb)) + ']}')
                     f.write("\n")
 
         if task_type == 'chief':
-            tt.upload_blob(
-                f'{OUTPUT_BUCKET}', 
-                f'{Local_Candidate_Embedding_Index}', 
-                f'{args.experiment_name}/{args.experiment_run}/candidates/{Local_Candidate_Embedding_Index}'
+            train_utils.upload_blob(
+                bucket_name=f'{OUTPUT_BUCKET}', 
+                source_file_name=f'{local_candidate_embedding_index}', 
+                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/candidates/{local_candidate_embedding_index}'
             )
     
-        logging.info(f"Saved {Local_Candidate_Embedding_Index} to {LOG_DIR}/candidates/{Local_Candidate_Embedding_Index}")
+        logging.info(f"Saved {local_candidate_embedding_index} to {LOG_DIR}/candidates/{local_candidate_embedding_index}")
 
 
 if __name__ == '__main__':

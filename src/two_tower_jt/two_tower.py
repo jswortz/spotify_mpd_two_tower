@@ -4,26 +4,21 @@ import tensorflow_recommenders as tfrs
 
 from google.cloud import storage
 
-
 import numpy as np
 import pickle as pkl
 import os
 from pprint import pprint
 
-# TODO: formatting for below import 
-# from . import train_config as cfg # needed for `02-build-model.ipynb`
-import train_config as cfg
+# import modules
+# import train_config as cfg
+# import train_utils
+# import feature_sets
+# uncomment when running `03-build-model.ipynb`
+from . import train_config as cfg
+from . import train_utils
+from . import feature_sets
 
-# EMBEDDING_DIM = cfg.EMBEDDING_DIM       # 128
-# PROJECTION_DIM = cfg.PROJECTION_DIM     # 50
-# SEED = cfg.SEED                         # 1234
-# USE_CROSS_LAYER = cfg.USE_CROSS_LAYER   # True
-# DROPOUT = cfg.USE_DROPOUT               # 'False'
-# DROPOUT_RATE = cfg.DROPOUT_RATE         # '0.33'
 MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH
-# MAX_PLAYLIST_LENGTH = 15   # 5
-# MAX_TOKENS = cfg.MAX_TOKENS
-# PROJECT_ID = cfg.PROJECT_ID # '20000'
 
 project_number = os.environ["CLOUD_ML_PROJECT_ID"]
 
@@ -34,159 +29,6 @@ storage_client = storage.Client(
 # ====================================================
 # helper functions
 # ====================================================
-
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # bucket_name = "your-bucket-name" (no 'gs://')
-    # source_file_name = "local/path/to/file" (file to upload)
-    # destination_blob_name = "folder/paths-to/storage-object-name"
-    storage_client = storage.Client(project=project_number)
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-
-    blob.upload_from_filename(source_file_name)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}."
-    )
-    
-def get_buckets_20(MAX_VAL):
-    """ 
-    creates discretization buckets of size 20
-    """
-    list_buckets = list(np.linspace(0, MAX_VAL, num=20))
-    return(list_buckets)
-
-candidate_features = {
-    "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-    "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-    "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    # new
-    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-}
-
-feats = {
-    # ===================================================
-    # candidate track features
-    # ===================================================
-    "track_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),            
-    "track_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "album_uri_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),           
-    "album_name_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    "duration_ms_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    "track_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),      
-    "artist_pop_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "artist_genres_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "artist_followers_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    # "track_pl_titles_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_danceability_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_energy_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_key_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_loudness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_mode_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-    "track_speechiness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_acousticness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_instrumentalness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_liveness_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    "track_time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()), # track_time_signature_can
-    
-    # ===================================================
-    # summary playlist features
-    # ===================================================
-    "pl_name_src" : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    'pl_collaborative_src' : tf.io.FixedLenFeature(dtype=tf.string, shape=()), 
-    # 'num_pl_followers_src' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    'pl_duration_ms_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    'num_pl_songs_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), # n_songs_pl_new | num_pl_songs_new
-    'num_pl_artists_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
-    'num_pl_albums_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    # 'avg_track_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    # 'avg_artist_pop_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    # 'avg_art_followers_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()), 
-    
-    # ===================================================
-    # ragged playlist features
-    # ===================================================
-    # bytes / string
-    "track_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "artist_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "artist_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "album_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "album_name_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "artist_genres_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    # "tracks_playlist_titles_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_key_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_mode_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), # track_time_signature_pl | time_signature_pl
-
-    # Float List
-    "duration_ms_songs_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "artist_pop_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "artists_followers_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_danceability_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_energy_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_loudness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_speechiness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_acousticness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_instrumentalness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_liveness_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_valence_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-    "track_tempo_pl": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
-}
-
-options = tf.data.Options()
-options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-
-
-def parse_tfrecord(example):
-    """
-    Reads a serialized example from GCS and converts to tfrecord
-    """
-    # example = tf.io.parse_single_example(
-    example = tf.io.parse_example(
-        example,
-        feats
-        # features=feats
-    )
-    return example
-
-
-def parse_candidate_tfrecord_fn(example):
-    """
-    Reads candidate serialized examples from gcs and converts to tfrecord
-    """
-    # example = tf.io.parse_single_example(
-    example = tf.io.parse_example(
-        example, 
-        features=candidate_features
-    )
-    return example
 
 # ======================
 # Vocab Adapts
@@ -263,7 +105,7 @@ class Playlist_Model(tf.keras.Model):
         # # Feature: num_pl_followers_src
         # self.num_pl_followers_src_embedding = tf.keras.Sequential(
         #     [
-        #         tf.keras.layers.Discretization(get_buckets_20(71643)),
+        #         tf.keras.layers.Discretization(train_utils.get_buckets_20(71643)),
         #         tf.keras.layers.Embedding(
         #             input_dim=20 + 1, 
         #             output_dim=embedding_dim,
@@ -276,7 +118,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: pl_duration_ms_new
         self.pl_duration_ms_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(635073792)), 
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(635073792)), 
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -289,7 +131,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_songs_new | n_songs_pl_new
         self.num_pl_songs_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(376)),    # TODO - 376 from TRAIN
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(376)),    # TODO - 376 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -302,7 +144,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_artists_new
         self.num_pl_artists_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(238)),     # TODO - 238 from TRAIN
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(238)),     # TODO - 238 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -315,7 +157,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: num_pl_albums_new
         self.num_pl_albums_new_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(244)),   # TODO - 244 from TRAIN
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(244)),   # TODO - 244 from TRAIN
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -328,7 +170,7 @@ class Playlist_Model(tf.keras.Model):
 #         # Feature: avg_track_pop_pl_new
 #         self.avg_track_pop_pl_new_embedding = tf.keras.Sequential(
 #             [
-#                 tf.keras.layers.Discretization(get_buckets_20(86)),      # TODO 86 from TRAIN
+#                 tf.keras.layers.Discretization(train_utils.get_buckets_20(86)),      # TODO 86 from TRAIN
 #                 tf.keras.layers.Embedding(
 #                     input_dim=20 + 1, 
 #                     output_dim=embedding_dim,
@@ -341,7 +183,7 @@ class Playlist_Model(tf.keras.Model):
 #         # Feature: avg_artist_pop_pl_new
 #         self.avg_artist_pop_pl_new_embedding = tf.keras.Sequential(
 #             [
-#                 tf.keras.layers.Discretization(get_buckets_20(100)),     # TODO - parametrize
+#                 tf.keras.layers.Discretization(train_utils.get_buckets_20(100)),     # TODO - parametrize
 #                 tf.keras.layers.Embedding(
 #                     input_dim=20 + 1, 
 #                     output_dim=embedding_dim,
@@ -354,7 +196,7 @@ class Playlist_Model(tf.keras.Model):
 #         # Feature: avg_art_followers_pl_new
 #         self.avg_art_followers_pl_new_embedding = tf.keras.Sequential(
 #             [
-#                 tf.keras.layers.Discretization(get_buckets_20(93079438)),   # TODO - 93079438 from TRAIN
+#                 tf.keras.layers.Discretization(train_utils.get_buckets_20(93079438)),   # TODO - 93079438 from TRAIN
 #                 tf.keras.layers.Embedding(
 #                     input_dim=20 + 1, 
 #                     output_dim=embedding_dim,
@@ -514,7 +356,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: duration_ms_songs_pl
         self.duration_ms_songs_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(20744575)), # 20744575.0
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(20744575)), # 20744575.0
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -528,7 +370,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_pop_pl
         self.track_pop_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(100)),
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(100)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -541,7 +383,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: artist_pop_pl
         self.artist_pop_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(100)),
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(100)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -554,7 +396,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: artists_followers_pl
         self.artists_followers_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(94437255)), # TODO - was 100
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(94437255)), # TODO - was 100
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -567,7 +409,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_danceability_pl
         self.track_danceability_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -580,7 +422,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_energy_pl
         self.track_energy_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -606,7 +448,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_loudness_pl
         self.track_loudness_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(5)), # TODO - Normalize? [-60, 5)
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(5)), # TODO - Normalize? [-60, 5)
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -634,7 +476,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_speechiness_pl
         self.track_speechiness_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -647,7 +489,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_acousticness_pl
         self.track_acousticness_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -660,7 +502,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_instrumentalness_pl
         self.track_instrumentalness_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -673,7 +515,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_liveness_pl
         self.track_liveness_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -686,7 +528,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_valence_pl
         self.track_valence_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -699,7 +541,7 @@ class Playlist_Model(tf.keras.Model):
         # Feature: track_tempo_pl
         self.track_tempo_pl_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(250)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(250)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -943,7 +785,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: duration_ms_can
         self.duration_ms_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(20744575)),
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(20744575)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -955,7 +797,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: track_pop_can
         self.track_pop_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(100)),
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(100)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -967,7 +809,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: artist_pop_can
         self.artist_pop_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(100)),
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(100)),
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -998,7 +840,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # Feature: artist_followers_can
         self.artists_followers_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(94437255)), # TODO - was 100
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(94437255)), # TODO - was 100
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1029,7 +871,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_danceability_can
         self.track_danceability_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1041,7 +883,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_energy_can
         self.track_energy_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - was 100
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - was 100
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1066,7 +908,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_loudness_can
         self.track_loudness_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(5)), # TODO - Normalize? [-60, 5)
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(5)), # TODO - Normalize? [-60, 5)
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1094,7 +936,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_speechiness_can
         self.track_speechiness_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1106,7 +948,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_acousticness_can
         self.track_acousticness_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1118,7 +960,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_instrumentalness_can
         self.track_instrumentalness_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1130,7 +972,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_liveness_can
         self.track_liveness_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1142,7 +984,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_valence_can
         self.track_valence_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(1)), # TODO - Normalize?
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(1)), # TODO - Normalize?
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
@@ -1154,7 +996,7 @@ class Candidate_Track_Model(tf.keras.Model):
         # track_tempo_can
         self.track_tempo_can_embedding = tf.keras.Sequential(
             [
-                tf.keras.layers.Discretization(get_buckets_20(250)), # TODO - was 100
+                tf.keras.layers.Discretization(train_utils.get_buckets_20(250)), # TODO - was 100
                 tf.keras.layers.Embedding(
                     input_dim=20 + 1, 
                     output_dim=embedding_dim,
