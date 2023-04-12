@@ -1,8 +1,10 @@
 
 import kfp
 from typing import Any, Callable, Dict, NamedTuple, Optional, List
-from kfp.v2.dsl import (Artifact, Dataset, Input, InputPath, Model, Output,
-                        OutputPath, component, Metrics)
+from kfp.v2.dsl import (
+    Artifact, Dataset, Input, InputPath, 
+    Model, Output, OutputPath, component, Metrics
+)
 @kfp.v2.dsl.component(
     base_image='python:3.9',
     packages_to_install=[
