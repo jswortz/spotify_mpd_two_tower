@@ -18,6 +18,10 @@ def test_model_index_endpoint_v5(
     project: str,
     location: str,
     version: str,
+    train_output_gcs_bucket: str,
+    test_instances_gcs_filename: str,
+    experiment_name: str,
+    experiment_run: str,
     # train_dir: str,
     # train_dir_prefix: str,
     # ann_index_resource_uri: str,
@@ -104,17 +108,17 @@ def test_model_index_endpoint_v5(
         endpoint_id: str,
         instances: Dict,
         location: str = "us-central1",
-        api_endpoint: str = "us-central1-aiplatform.googleapis.com",):
+        api_endpoint: str = "us-central1-aiplatform.googleapis.com",
+    ):
         """
-        `instances` can be either single instance of type dict or a list
-        of instances.
+        either single instance of type dict or a list of instances.
+        This client only needs to be created once, and can be reused for multiple requests.
         """
 
         # The AI Platform services require regional API endpoints.
         client_options = {"api_endpoint": api_endpoint}
         
         # Initialize client that will be used to create and send requests.
-        # This client only needs to be created once, and can be reused for multiple requests.
         client = vertex_ai.gapic.PredictionServiceClient(client_options=client_options)
         
         # The format of each instance should conform to the deployed model's prediction input schema.
@@ -134,9 +138,7 @@ def test_model_index_endpoint_v5(
             endpoint=endpoint, instances=instances, parameters=parameters
         )
         logging.info(f'Response: {response}')
-        
         logging.info(f'Deployed Model ID(s): {response.deployed_model_id}')
-
         # The predictions are a google.protobuf.Value representation of the model's predictions.
         _predictions = response.predictions
         logging.info(f'Response Predictions: {_predictions}')
@@ -146,21 +148,19 @@ def test_model_index_endpoint_v5(
     # ===================================================
     # load test instance
     # ===================================================
-    BUCKET_TEST = 'spotify-data-regimes'
-    LOCAL_TEST_INSTANCE = 'test_instance_15_dict.pkl'
-    PREFIX = 'jtv15-8m'
-    TEST_GCS_OBJ = f'{PREFIX}/{LOCAL_TEST_INSTANCE}'
+    LOCAL_TEST_INSTANCE = 'test_instances_dict.pkl'
+    GCS_PATH_TO_BLOB = f'{experiment_name}/{experiment_run}/{test_instances_gcs_filename}'
     LOADED_CANDIDATE_DICT = f'loaded_{LOCAL_TEST_INSTANCE}'
     
     loaded_test_instance = download_blob(
-        BUCKET_TEST,
-        TEST_GCS_OBJ,
-        LOADED_CANDIDATE_DICT
+        bucket_name=train_output_gcs_bucket,
+        source_gcs_obj=GCS_PATH_TO_BLOB,
+        local_filename=LOADED_CANDIDATE_DICT
     )
     logging.info(f'loaded_test_instance: {loaded_test_instance}')
     
     # make prediction request
-    _endpoint_id = _endpoint_uri.split('/')[-1]    # "633325234048",
+    _endpoint_id = _endpoint_uri.split('/')[-1]
     logging.info(f"_endpoint_id created = {_endpoint_id}")
     prediction_test = predict_custom_trained_model_sample(
         project=project,                     
@@ -169,7 +169,9 @@ def test_model_index_endpoint_v5(
         instances=loaded_test_instance
     )
     
-    ## Indexes
+    # ===================================================
+    # Matching Engine
+    # ===================================================
     logging.info(f"ann_index_endpoint_resource_uri: {ann_index_endpoint_resource_uri}")
     logging.info(f"brute_index_endpoint_resource_uri: {brute_index_endpoint_resource_uri}")
 
@@ -196,7 +198,10 @@ def test_model_index_endpoint_v5(
         num_neighbors=10
     )
     
-    # Calculate recall by determining how many neighbors were correctly retrieved as compared to the brute-force option.
+    # =========================================================
+    # Calculate recall by determining how many neighbors 
+    # correctly retrieved as compared to the brute-force option
+    # =========================================================
     recalled_neighbors = 0
     for tree_ah_neighbors, brute_force_neighbors in zip(
         ANN_response, BF_response
