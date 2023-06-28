@@ -90,6 +90,7 @@ def get_all_features(MAX_PLAYLIST_LENGTH):
         "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
         "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
         "track_time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()),
+        "candidate_rank": tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
 
         # ===================================================
         # summary playlist features
