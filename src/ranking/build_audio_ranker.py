@@ -571,7 +571,7 @@ class TheRankingModel(tfrs.models.Model):
             )
             , metrics = [
                 tf.keras.metrics.RootMeanSquaredError(name="rmse_metric")
-                , tfr.keras.metrics.NDCGMetric(name="ndcg_metric")
+                , tf.keras.metrics.NDCGMetric(name="ndcg_metric")
             ]
         )
 
