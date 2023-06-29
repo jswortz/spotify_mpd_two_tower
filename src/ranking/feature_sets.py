@@ -7,14 +7,15 @@ import tensorflow as tf
 # ================================================================
 
 # relative imports running locally
-from . import local_utils as cfg
+# from src.ranking import train_config as cfg
+import train_config as cfg
 
-MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH # 5 | cfg.MAX_PLAYLIST_LENGTH
-
-
+# # relative imports running cloud
+# import train_config as cfg
 
 # ================================================================
 
+MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH # 5 | cfg.MAX_PLAYLIST_LENGTH
 
 # ===================================================
 # get_candidate_features

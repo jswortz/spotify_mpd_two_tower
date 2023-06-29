@@ -1,0 +1,18 @@
+
+# FROM tensorflow/tensorflow:2.10.1-gpu
+FROM gcr.io/deeplearning-platform-release/tf-gpu.2-11
+
+ENV PYTHONUNBUFFERED True
+
+# Copies the trainer code to the docker image.
+# COPY ranking/* ./
+COPY ranking /ranking
+
+WORKDIR /ranking
+
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+RUN apt update && apt -y install nvtop
+
+# RUN export PYTHONPATH=${PYTHONPATH}:${APP_HOME}/

@@ -1,0 +1,7 @@
+google-cloud-aiplatform>=1.26.1
+tensorflow-recommenders==0.7.2
+tensorboard==2.10.1
+tensorboard-data-server==0.6.1
+tensorboard-plugin-profile==2.11.1
+tensorflow-io==0.27.0
+google-cloud-aiplatform[cloud_profiler]>=1.26.1

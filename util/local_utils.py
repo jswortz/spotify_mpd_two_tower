@@ -1,7 +1,7 @@
 import numpy as np
+import logging
 
 import tensorflow as tf
-import logging
 
 from google.cloud import storage
 
