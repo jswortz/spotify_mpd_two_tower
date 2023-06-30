@@ -10,4 +10,4 @@ data/data/mpd.slice.520000-520999.json
 data/data/mpd.slice.521000-521999.json
 **/*.json
 *checkpoint*
-*cpython-37.pyc
+**cpython-37.pyc
