@@ -9,3 +9,4 @@ data/data/mpd.slice.52000-52999.json
 data/data/mpd.slice.520000-520999.json
 data/data/mpd.slice.521000-521999.json
 **/*.json
+*checkpoint*
