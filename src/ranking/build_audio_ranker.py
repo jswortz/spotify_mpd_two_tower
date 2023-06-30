@@ -7,6 +7,7 @@ from typing import Dict, Text, List, Optional
 
 import tensorflow as tf
 import tensorflow_recommenders as tfrs
+# import tensorflow_ranking as tfr
 
 from google.cloud import storage
 
@@ -15,13 +16,10 @@ from google.cloud import storage
 # ================================================================
 
 # # relative imports running locally
-# from src.ranking import train_utils #, feature_sets
+# from src.ranking import train_utils
 # from src.ranking import train_config as cfg
-# from ranking import train_utils #, feature_sets
-# from ranking import train_config as cfg
 
 # relative imports running cloud
-# import feature_sets
 import train_utils
 import train_config as cfg
 
@@ -571,7 +569,10 @@ class TheRankingModel(tfrs.models.Model):
             )
             , metrics = [
                 tf.keras.metrics.RootMeanSquaredError(name="rmse_metric")
-                , tf.keras.metrics.NDCGMetric(name="ndcg_metric")
+                # , tfr.keras.metrics.NDCGMetric(
+                #     name="ndcg_metric"
+                #     , ragged = True
+                # )
             ]
         )
 
@@ -587,5 +588,6 @@ class TheRankingModel(tfrs.models.Model):
         # The task computes the loss and the metrics.
         return self.task(
             labels=labels
-            , predictions=rating_predictions
+            # , predictions=rating_predictions
+            , predictions=tf.squeeze(rating_predictions, axis=-1),
         )

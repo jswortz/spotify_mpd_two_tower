@@ -8,10 +8,9 @@ import tensorflow as tf
 
 # relative imports running locally
 # from src.ranking import train_config as cfg
-import train_config as cfg
 
 # # relative imports running cloud
-# import train_config as cfg
+import train_config as cfg
 
 # ================================================================
 
