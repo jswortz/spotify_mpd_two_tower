@@ -591,3 +591,8 @@ class TheRankingModel(tfrs.models.Model):
             # , predictions=rating_predictions
             , predictions=tf.squeeze(rating_predictions, axis=-1),
         )
+    
+    
+# , tfrs.layers.loss.HardNegativeMining(
+#     num_hard_negatives=10
+# )

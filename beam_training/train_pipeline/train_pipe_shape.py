@@ -123,7 +123,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_valence_can": _float_feature(data['track_valence_can']),
             "track_tempo_can": _float_feature(data['track_tempo_can']),
             "track_time_signature_can": _string_array(data['track_time_signature_can']), # track_time_signature_can
-            "candidate_rank": _float_feature(data['candidate_rank']),
+            # "candidate_rank": _float_feature(data['candidate_rank']),
             
             # ===================================================
             # Set playlist_seed_tracks (list types)

@@ -365,15 +365,15 @@ def main(args):
     logging.info(f'Saving model checkpoints to {checkpoint_dir}')
     
     # model checkpoints - ModelCheckpoint | BackupAndRestore
-    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_dir + "/cp-{epoch:03d}-loss={loss:.2f}.ckpt", # cp-{epoch:04d}.ckpt" cp-{epoch:04d}.ckpt"
-        save_weights_only=True,
-        save_best_only=True,
-        monitor='total_loss',
-        mode='min',
-        save_freq=args.chkpt_freq,
-        verbose=1,
-    )
+    # model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    #     filepath=checkpoint_dir + "/cp-{epoch:03d}-loss={loss:.2f}.ckpt", # cp-{epoch:04d}.ckpt" cp-{epoch:04d}.ckpt"
+    #     save_weights_only=True,
+    #     save_best_only=True,
+    #     monitor='total_loss',
+    #     mode='min',
+    #     save_freq=args.chkpt_freq,
+    #     verbose=1,
+    # )
 
     if args.profiler:
         #TODO
@@ -421,7 +421,7 @@ def main(args):
         validation_steps=args.valid_steps, # 100,
         callbacks=[
             tensorboard_callback,
-            model_checkpoint_callback,
+            # model_checkpoint_callback,
         ], 
         verbose=2
     )

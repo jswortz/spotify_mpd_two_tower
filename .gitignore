@@ -1,14 +1,11 @@
-util/.ipynb_checkpoints/two_tower_16_bit_edition-checkpoint.py
-data/data/mpd.slice.512000-512999.json
-data/data/mpd.slice.515000-515999.json
-data/data/mpd.slice.516000-516999.json
-data/data/mpd.slice.517000-517999.json
-data/data/mpd.slice.518000-518999.json
-data/data/mpd.slice.519000-519999.json
-data/data/mpd.slice.52000-52999.json
-data/data/mpd.slice.520000-520999.json
-data/data/mpd.slice.521000-521999.json
-**/*.json
+*.cpython-310.pyc
 *checkpoint*
-**cpython-37.pyc
-**/test_root
+*.ipynb_checkpoints
+# .gcloudignore
+# .git
+# .github
+# .ipynb_checkpoints/*
+# *__pycache__
+# *cpython-37.pyc
+# .gitignore
+# .DS_Store
