@@ -1,5 +1,5 @@
 *.cpython-310.pyc
-*checkpoint*
+*-checkpoint.*
 *.ipynb_checkpoints
 # .gcloudignore
 # .git
