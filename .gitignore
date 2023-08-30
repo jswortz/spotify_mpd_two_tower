@@ -1,11 +1,13 @@
 *.cpython-310.pyc
 *-checkpoint.*
+*-checkpoint.md
+*-checkpoint.py
 *.ipynb_checkpoints
 # .gcloudignore
 # .git
 # .github
-# .ipynb_checkpoints/*
-# *__pycache__
+.ipynb_checkpoints/*
+*__pycache__
 # *cpython-37.pyc
 # .gitignore
 # .DS_Store
