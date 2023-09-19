@@ -10,36 +10,20 @@ import os
 from pprint import pprint
 
 # this repo
-import train_utils
-import feature_sets
-# from . import feature_sets
-# from . import train_utils
-
+# import train_utils
+# import feature_sets
+# import train_config as cfg
 # from src.two_tower_jt import train_config as cfg
 # from src.two_tower_jt import train_utils, feature_sets
 
-# from .train_utils import (
-#     full_parse, 
-#     get_train_strategy, 
-#     _is_chief, 
-#     get_arch_from_string, 
-#     tf_if_null_return_zero, 
-#     get_buckets_20, 
-#     upload_blob
-# )
-# from .feature_sets import (
-#     get_candidate_features, 
-#     get_all_features, 
-#     full_parse, 
-#     parse_tfrecord, 
-#     parse_candidate_tfrecord_fn
-# )
+# new fix to train image + ENTRY CMD 
+from . import feature_sets
+from . import train_utils
+from . import train_config as cfg
 
 # TODO
-MAX_PLAYLIST_LENGTH = 5 #cfg.MAX_PLAYLIST_LENGTH
-PROJECT_ID = 'hybrid-vertex' # cfg.PROJECT_ID
-
-# project_number = os.environ["CLOUD_ML_PROJECT_ID"]
+MAX_PLAYLIST_LENGTH = cfg.TRACK_HISTORY # 5
+PROJECT_ID = cfg.PROJECT_ID
 
 storage_client = storage.Client(
     project=PROJECT_ID
@@ -50,8 +34,6 @@ storage_client = storage.Client(
 # ======================
 # > TODO: vocab adapts, min/max, etc. - from train set only?
 # > TODO: think about Feature Store integration
-
-import pickle as pkl
 
 # ========================================
 # playlist tower

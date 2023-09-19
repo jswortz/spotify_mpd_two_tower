@@ -25,7 +25,7 @@ import train_config as cfg
 
 # ================================================================
 
-MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH # 5 | cfg.MAX_PLAYLIST_LENGTH
+MAX_PLAYLIST_LENGTH = cfg.TRACK_HISTORY # 5 | cfg.MAX_PLAYLIST_LENGTH
 # PROJECT_ID = cfg.PROJECT_ID # 'hybrid-vertex' | cfg.PROJECT_ID
 # project_number = os.environ["CLOUD_ML_PROJECT_ID"]
 

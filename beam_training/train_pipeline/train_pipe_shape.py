@@ -170,7 +170,7 @@ def run(args):
     BUCKET_NAME = args['bucket_name']
     
     JOB_NAME = f'spotify-bq-tfrecords-{VERSION}-{TIMESTAMP}'
-    ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
+    ROOT = f'gs://{BUCKET_NAME}/data/{VERSION}'
 
     DATA_DIR = ROOT + '/data/' # Location to store data
     # STATS_DIR = ROOT +'/stats/' # Location to store stats 

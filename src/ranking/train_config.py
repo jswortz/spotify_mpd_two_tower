@@ -1,2 +1,2 @@
 PROJECT_ID='hybrid-vertex'
-MAX_PLAYLIST_LENGTH = 5
+TRACK_HISTORY = 5

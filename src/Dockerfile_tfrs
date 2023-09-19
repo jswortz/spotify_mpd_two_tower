@@ -2,13 +2,17 @@
 FROM tensorflow/tensorflow:2.11.0-gpu
 # FROM gcr.io/deeplearning-platform-release/tf-gpu.2-11
 
-WORKDIR /src
+# ENV PYTHONUNBUFFERED True
+ENV APP_HOME /workspace
 
-# Copies the trainer code to the docker image.
-# COPY src/two_tower_jt/* src/two_tower_jt/ 
-COPY src/two_tower_jt/* ./ 
+WORKDIR $APP_HOME
 
-# RUN pip install -r two_tower_jt/requirements.txt
-RUN pip install -r ./requirements.txt
+COPY src/two_tower_jt $APP_HOME/src/two_tower_jt
+
+# RUN pip install --upgrade pip
+
+RUN pip install -r $APP_HOME/src/two_tower_jt/requirements.txt
 
 RUN apt update && apt -y install nvtop
+
+RUN export PYTHONPATH=${PYTHONPATH}:${APP_HOME}/

@@ -14,7 +14,7 @@ import train_config as cfg
 
 # ================================================================
 
-MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH # 5 | cfg.MAX_PLAYLIST_LENGTH
+MAX_PLAYLIST_LENGTH = cfg.TRACK_HISTORY # 5 | cfg.MAX_PLAYLIST_LENGTH
 
 # ===================================================
 # get_candidate_features

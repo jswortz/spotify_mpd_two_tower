@@ -2,11 +2,11 @@ from datetime import datetime
 import sys
 
 # setup
-PROJECT_ID = sys.argv[1]      # 'hybrid-vertex'
-NETWORK = sys.argv[2]         # 'ucaip-haystack-vpc-network'
-REGION = sys.argv[3]          # 'us-central1' # Set the region for Dataflow jobs
+PROJECT_ID = sys.argv[1]                             # 'hybrid-vertex'
+NETWORK = sys.argv[2]                                # 'ucaip-haystack-vpc-network'
+REGION = sys.argv[3]                                 # 'us-central1' # Set the region for Dataflow jobs
 VERSION = sys.argv[4]
-BUCKET_NAME = sys.argv[5]     # 'spotify-data-regimes'
+BUCKET_NAME = sys.argv[5]                            # 'spotify-data-regimes'
 GCS_SUBFOLDER = sys.argv[6]
 
 TOTAL_MB_DS = sys.argv[7]
@@ -25,12 +25,12 @@ MAX_WORKERS = '40'
 RUNNER = 'DataflowRunner'
 
 # storage
-ROOT = f'gs://{BUCKET_NAME}/{VERSION}'
+ROOT = f'gs://{BUCKET_NAME}/data/{VERSION}'
 
-DATA_DIR = ROOT + '/data/' # Location to store data
-STATS_DIR = ROOT +'/stats/' # Location to store stats 
-STAGING_DIR = ROOT + '/job/staging/' # Dataflow staging directory on GCP
-TEMP_DIR =  ROOT + '/job/temp/' # Dataflow temporary directory on GCP
+DATA_DIR = ROOT + '/data/'                          # Location to store data
+STATS_DIR = ROOT +'/stats/'                         # Location to store stats 
+STAGING_DIR = ROOT + '/job/staging/'                # Dataflow staging directory on GCP
+TEMP_DIR =  ROOT + '/job/temp/'                     # Dataflow temporary directory on GCP
 TF_RECORD_DIR = ROOT + '/tf-records/'
 CANDIDATE_DIR = ROOT + "/candidates/"
 
