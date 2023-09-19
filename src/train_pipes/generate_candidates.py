@@ -8,8 +8,8 @@ from kfp.v2.dsl import (
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.23.0',
-        'tensorflow==2.10.1',
+        'google-cloud-aiplatform==1.26.1',
+        'tensorflow==2.11.0',
         'tensorflow-recommenders==0.7.2',
         'numpy',
         # 'google-cloud-storage',

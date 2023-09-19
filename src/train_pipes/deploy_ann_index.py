@@ -8,7 +8,7 @@ from kfp.v2.dsl import (
 @kfp.v2.dsl.component(
     base_image="python:3.9",
     packages_to_install=[
-        'google-cloud-aiplatform==1.23.0',
+        'google-cloud-aiplatform==1.26.1',
         'google-api-core==2.11.0',
     ]
 )
