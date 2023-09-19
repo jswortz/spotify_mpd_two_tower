@@ -9,12 +9,11 @@ import pickle as pkl
 import os
 from pprint import pprint
 
-# import modules
-# import train_config as cfg
-# import train_utils
-# import feature_sets
-from . import feature_sets
-from . import train_utils
+# this repo
+import train_utils
+import feature_sets
+# from . import feature_sets
+# from . import train_utils
 
 # from src.two_tower_jt import train_config as cfg
 # from src.two_tower_jt import train_utils, feature_sets

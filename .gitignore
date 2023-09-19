@@ -1,12 +1,12 @@
 *.cpython-310.pyc
-*-checkpoint.*
-*-checkpoint.md
-*-checkpoint.py
+*.cpython-37.pyc
+*checkpoint*
 *.ipynb_checkpoints
+*.ipynb_checkpoints/*
+*WIP*
 # .gcloudignore
 # .git
 # .github
-.ipynb_checkpoints/*
 *__pycache__
 # *cpython-37.pyc
 # .gitignore

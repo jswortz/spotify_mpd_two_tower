@@ -238,19 +238,21 @@ def main(args):
     # Vocab Files
     # ====================================================
     logging.info(f'Downloading vocab file...')
-    
-    if args.new_vocab:
-        # here
-        NEW_VOCAB_FILE = f'gs://{OUTPUT_BUCKET}/{args.experiment_name}/{args.experiment_run}/vocab_dict.pkl'
-        os.system(f'gsutil cp {NEW_VOCAB_FILE} .')  # TODO - paramterize
-        logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
-    else:
-        # EXISTING_VOCAB_FILE = 'gs://two-tower-models/vocabs/vocab_dict.pkl'
-        EXISTING_VOCAB_FILE = f'gs://{OUTPUT_BUCKET}/{args.experiment_name}/{args.experiment_run}/vocab_dict.pkl' # TODO - testing
-        os.system(f'gsutil cp {EXISTING_VOCAB_FILE} .')  # TODO - paramterize
-        logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}")
 
-    filehandler = open('vocab_dict.pkl', 'rb')
+    LOCAL_VOCAB_FILENAME = 'vocab_dict.pkl'
+    EXISTING_VOCAB_FILE = f'gs://{args.train_output_gcs_bucket}/{args.experiment_name}/{args.experiment_run}/{LOCAL_VOCAB_FILENAME}'
+    logging.info(f'Downloading vocab file from: {EXISTING_VOCAB_FILE}...')
+    
+    train_utils.download_blob(
+        project_id = args.project,
+        bucket_name = args.train_output_gcs_bucket, 
+        source_blob_name = f'{args.experiment_name}/{args.experiment_run}/{LOCAL_VOCAB_FILENAME}', 
+        destination_file_name= LOCAL_VOCAB_FILENAME
+    )
+
+    logging.info(f"Downloaded vocab from: {EXISTING_VOCAB_FILE}\n")
+
+    filehandler = open(f"{LOCAL_VOCAB_FILENAME}", 'rb')
     vocab_dict = pkl.load(filehandler)
     filehandler.close()
     
@@ -451,18 +453,22 @@ def main(args):
 
     # ====================================================
     # Train model
-    # ====================================================    
-    # Initialize profiler
-    logging.info('Initializing profiler ...')
+    # ====================================================
+    
+    if args.profiler:
+        # Initialize profiler
+        logging.info('Initializing profiler ...')
+
+        try:
+            cloud_profiler.init()
+        except:
+            ex_type, ex_value, ex_traceback = sys.exc_info()
+            print("*** Unexpected:", ex_type.__name__, ex_value)
+            traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
+
+        logging.info('The profiler initiated...')
         
-    try:
-        cloud_profiler.init()
-    except:
-        ex_type, ex_value, ex_traceback = sys.exc_info()
-        print("*** Unexpected:", ex_type.__name__, ex_value)
-        traceback.print_tb(ex_traceback, limit=10, file=sys.stdout)
-        
-    logging.info('The profiler initiated...')
+    # training loop
     logging.info('Starting training loop...')
     
     start_time = time.time()
@@ -510,7 +516,8 @@ def main(args):
             train_utils.upload_blob(
                 bucket_name=f'{OUTPUT_BUCKET}', 
                 source_file_name='model_eval_dict.pkl', 
-                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/combined-model-eval/model_eval_dict.pkl'
+                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/combined-model-eval/model_eval_dict.pkl',
+                project_id = project_number
             )
     
     # ====================================================
@@ -614,7 +621,8 @@ def main(args):
             train_utils.upload_blob(
                 bucket_name=f'{OUTPUT_BUCKET}', 
                 source_file_name=f'{local_candidate_embedding_index}', 
-                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/candidates/{local_candidate_embedding_index}'
+                destination_blob_name=f'{args.experiment_name}/{args.experiment_run}/candidates/{local_candidate_embedding_index}',
+                project_id = project_number
             )
     
         logging.info(f"Saved {local_candidate_embedding_index} to {LOG_DIR}/candidates/{local_candidate_embedding_index}")
