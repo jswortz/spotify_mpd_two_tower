@@ -86,6 +86,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
         # ===============================
         features = {
             # playlist - context features
+            # "pid": _string_array(data['pl_name_src']),
             "pl_name_src": _string_array(data['pl_name_src']),
             'pl_collaborative_src' : _string_array(data['pl_collaborative_src']),
             # 'num_pl_followers_src' : _float_feature(data['num_pl_followers_src']),

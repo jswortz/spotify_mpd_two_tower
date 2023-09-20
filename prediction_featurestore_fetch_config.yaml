@@ -1,0 +1,123 @@
+modelInputFormat: DICT
+featureSources:
+  track:
+    entityType: projects/934903580331/locations/us-central1/featurestores/sp_mpd_candidate_tracks_ndr_v1/entityTypes/track
+    entityIdField: track_uri_can
+features:
+- name: album_name_pl
+- name: album_uri_pl
+- name: artist_genres_pl
+- name: artist_name_pl
+- name: artist_pop_pl
+- name: artist_uri_pl
+- name: artists_followers_pl
+- name: duration_ms_songs_pl
+- name: num_pl_albums_new
+- name: num_pl_artists_new
+- name: num_pl_songs_new
+- name: pl_collaborative_src
+- name: pl_duration_ms_new
+- name: pl_name_src
+- name: track_time_signature_pl
+- name: track_acousticness_pl
+- name: track_danceability_pl
+- name: track_energy_pl
+- name: track_instrumentalness_pl
+- name: track_key_pl
+- name: track_liveness_pl
+- name: track_loudness_pl
+- name: track_mode_pl
+- name: track_name_pl
+- name: track_pop_pl
+- name: track_speechiness_pl
+- name: track_tempo_pl
+- name: track_uri_pl
+- name: track_valence_pl
+- name: track_name_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_name_can
+- name: artist_uri_can
+  fetchFrom:
+    sourceName: track
+    featureId: artist_uri_can
+- name: artist_name_can
+  fetchFrom:
+    sourceName: track
+    featureId: artist_name_can
+- name: album_uri_can
+  fetchFrom:
+    sourceName: track
+    featureId: album_uri_can
+- name: album_name_can
+  fetchFrom:
+    sourceName: track
+    featureId: album_name_can
+- name: duration_ms_can
+  fetchFrom:
+    sourceName: track
+    featureId: duration_ms_can
+- name: track_pop_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_pop_can
+- name: artist_pop_can
+  fetchFrom:
+    sourceName: track
+    featureId: artist_pop_can
+- name: artist_genres_can
+  fetchFrom:
+    sourceName: track
+    featureId: artist_genres_can
+- name: artist_followers_can
+  fetchFrom:
+    sourceName: track
+    featureId: artist_followers_can
+- name: track_danceability_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_danceability_can
+- name: track_energy_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_energy_can
+- name: track_key_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_key_can
+- name: track_loudness_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_loudness_can
+- name: track_mode_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_mode_can
+- name: track_speechiness_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_speechiness_can
+- name: track_acousticness_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_acousticness_can
+- name: track_instrumentalness_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_instrumentalness_can
+- name: track_liveness_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_liveness_can
+- name: track_valence_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_valence_can
+- name: track_tempo_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_tempo_can
+- name: track_time_signature_can
+  fetchFrom:
+    sourceName: track
+    featureId: track_time_signature_can
