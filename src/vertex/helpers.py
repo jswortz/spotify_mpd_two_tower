@@ -71,9 +71,12 @@ def _build_index_config(embedding_gcs_uri: str, dimensions: int, index_type: str
         )
         
     else:
-        except Exception as e:
-            logger.error(f'Failed to create index. select either "ann" or "bf" for "index_type"')
-            raise e
+        logger.error(f'Failed to create index. select either "ann" or "bf" for "index_type"')
+        
+        # TODO - add try / except logic:
+        # except Exception as e:
+        #     logger.error(f'Failed to create index. select either "ann" or "bf" for "index_type"')
+        #     raise e
 
     return metadata
 

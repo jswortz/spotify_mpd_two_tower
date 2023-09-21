@@ -119,6 +119,12 @@ To run the notebooks successfully, follow the steps below.
 
 #### Dependencies
 
+**(TODO) General:**
+```
+python-decouple
+```
+
+**Tensorflow:**
 ```
 tensorflow==2.11.0
 tensorflow-cloud==0.1.16
