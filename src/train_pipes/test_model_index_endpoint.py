@@ -15,7 +15,7 @@ from kfp.v2.dsl import (
         'numpy'
     ],
 )
-def test_model_index_endpoint_v5(
+def test_model_index_endpoint(
     project: str,
     location: str,
     version: str,
