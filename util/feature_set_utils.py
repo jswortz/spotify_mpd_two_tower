@@ -2,6 +2,9 @@ import numpy as np
 import logging
 import tensorflow as tf
 
+import os 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 # ================================================================
 # TODO - handle relative imports for local and cloud execution
 # ================================================================
@@ -10,11 +13,8 @@ import tensorflow as tf
 from . import local_utils as cfg
 
 MAX_PLAYLIST_LENGTH = cfg.MAX_PLAYLIST_LENGTH # 5 | cfg.MAX_PLAYLIST_LENGTH
-
-
-
 # ================================================================
-
+        
 
 # ===================================================
 # get_candidate_features
@@ -57,9 +57,9 @@ def get_candidate_features():
 # ===================================================
 # get_all_features
 # ===================================================
-def get_all_features(MAX_PLAYLIST_LENGTH):
+def get_all_features(MAX_PLAYLIST_LENGTH: int, ranker: bool = False):
     '''
-    features for both towers
+    features for both towers and ranker
     '''
     feats = {
         # ===================================================
@@ -89,7 +89,6 @@ def get_all_features(MAX_PLAYLIST_LENGTH):
         "track_valence_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
         "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
         "track_time_signature_can": tf.io.FixedLenFeature(dtype=tf.string, shape=()),
-        # "candidate_rank": tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
 
         # ===================================================
         # summary playlist features
@@ -106,7 +105,7 @@ def get_all_features(MAX_PLAYLIST_LENGTH):
         # 'avg_art_followers_pl_new' : tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
 
         # ===================================================
-        # ragged playlist features
+        # ragged playlist-track features
         # ===================================================
         # bytes / string
         "track_uri_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
@@ -137,14 +136,25 @@ def get_all_features(MAX_PLAYLIST_LENGTH):
         
         # bytes / string
         "track_time_signature_pl": tf.io.FixedLenFeature(dtype=tf.string, shape=(MAX_PLAYLIST_LENGTH,)), 
+
     }
+    
+    # ===================================================
+    # playlist-track rank labels
+    # ===================================================
+    if ranker == True:
+        
+        add_rank_entry = {"candidate_rank": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),}
+        
+        # update feats dictionary with rank label
+        feats.update(add_rank_entry)
     
     return feats
 
 # ===================================================
 # get_audio_ranker_feats
 # ===================================================
-def get_audio_ranker_feats(MAX_PLAYLIST_LENGTH):
+def get_audio_ranker_feats(MAX_PLAYLIST_LENGTH, list_wise = False):
     '''
     features for both towers
     '''
@@ -190,9 +200,13 @@ def get_audio_ranker_feats(MAX_PLAYLIST_LENGTH):
         "track_tempo_can":tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
         "track_time_signature_can":tf.io.FixedLenFeature(dtype=tf.string, shape=()),
         
-        # label - candidate score/rank
-        # "candidate_rank": tf.io.FixedLenFeature(dtype=tf.float32, shape=()),
+        # label - rank single (1) candidate track per playlist example
+        "candidate_rank": tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)),
     }
+    if list_wise == True:
+        
+        # update label - to rank multiple candidate tracks per playlist example
+        feats["candidate_rank"] = tf.io.FixedLenFeature(dtype=tf.float32, shape=(MAX_PLAYLIST_LENGTH,)), 
     
     return feats
 
@@ -208,9 +222,39 @@ def full_parse(data):
 
 def parse_tfrecord(example):
     """
+    TODO - will move once parse functions below are completely adopted
+    
     Reads a serialized example from GCS and converts to tfrecord
     """
     feats = get_all_features(MAX_PLAYLIST_LENGTH)
+    
+    # example = tf.io.parse_single_example(
+    example = tf.io.parse_example(
+        example,
+        feats
+        # features=feats
+    )
+    return example
+
+def parse_towers_tfrecord(example):
+    """
+    Reads a serialized example from GCS and converts to tfrecord
+    """
+    feats = get_all_features(MAX_PLAYLIST_LENGTH, ranker=False)
+    
+    # example = tf.io.parse_single_example(
+    example = tf.io.parse_example(
+        example,
+        feats
+        # features=feats
+    )
+    return example
+
+def parse_rank_tfrecord(example):
+    """
+    Reads a serialized example from GCS and converts to tfrecord
+    """
+    feats = get_all_features(MAX_PLAYLIST_LENGTH, ranker=True)
     
     # example = tf.io.parse_single_example(
     example = tf.io.parse_example(
@@ -237,6 +281,8 @@ def parse_candidate_tfrecord_fn(example):
 def parse_audio_rank_tfrecord(example):
     """
     Reads a serialized example from GCS and converts to tfrecord
+    
+    > returns rank label for single candidate track per example
     """
     feats = get_audio_ranker_feats(MAX_PLAYLIST_LENGTH)
     
@@ -248,4 +294,41 @@ def parse_audio_rank_tfrecord(example):
     )
     return example
 
+def parse_lw_audio_rank_tfrecord(example):
+    """
+    Reads a serialized example from GCS and converts to tfrecord
+    
+    > passes `list_wise` parameter to return rank label for multiple 
+        candidate tracks per example
+    """
+    feats = get_audio_ranker_feats(MAX_PLAYLIST_LENGTH, list_wise=True)
+    
+    # example = tf.io.parse_single_example(
+    example = tf.io.parse_example(
+        example,
+        feats
+        # features=feats
+    )
+    return example
+
 # get_candidate_features, get_all_features, full_parse, parse_tfrecord, parse_candidate_tfrecord_fn
+
+# # ===================================================
+# # get feature mapping
+# # ===================================================
+# def get_feature_mapping(key):
+#     """
+#     returns chosen parse function
+    
+#     example:
+#         desired_mapping = get_feature_mapping(MY_CHOICE)
+#     """
+    
+#     map_dict = {
+#         "towers": parse_towers_tfrecord,
+#         "rank": parse_rank_tfrecord,
+#         "audio-rank": parse_audio_rank_tfrecord,
+#         "lw-audio-rank": parse_lw_audio_rank_tfrecord,
+#         # "query": feature_utils.parse_XXXX,
+#     }
+#     return map_dict[key]

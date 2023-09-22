@@ -1,17 +1,16 @@
 
 FROM tensorflow/tensorflow:2.11.0-gpu
-# FROM gcr.io/deeplearning-platform-release/tf-gpu.2-11
 
-# ENV PYTHONUNBUFFERED True
+ENV PYTHONUNBUFFERED True
+
 ENV APP_HOME /workspace
 
 WORKDIR $APP_HOME
 
-COPY src/two_tower_jt $APP_HOME/src/two_tower_jt
+COPY /two_tower_jt $APP_HOME/src/two_tower_jt
 
-# RUN pip install --upgrade pip
-
-RUN pip install -r $APP_HOME/src/two_tower_jt/requirements.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r $APP_HOME/src/two_tower_jt/requirements.txt
 
 RUN apt update && apt -y install nvtop
 

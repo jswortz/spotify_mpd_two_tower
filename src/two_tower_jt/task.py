@@ -75,6 +75,7 @@ def parse_args():
     parser.add_argument('--tb_resource_name', type=str, required=False)
     parser.add_argument('--embed_frequency', type=int, required=False)
     parser.add_argument('--hist_frequency', type=int, required=False)
+    parser.add_argument('--update_frequency', required=False)
     parser.add_argument('--tf_gpu_thread_count', type=str, required=False)
     parser.add_argument('--block_length', type=int, required=False)
     parser.add_argument('--num_data_shards', type=int, required=False)
@@ -382,7 +383,7 @@ def main(args):
     # callbacks-v2
     # ====================================================
     
-    log_dir = f"{LOG_DIR}/tb-logs-jt"
+    log_dir = f"{LOG_DIR}/logs" # logs-jt
     if 'AIP_TENSORBOARD_LOG_DIR' in os.environ:
         log_dir=os.environ['AIP_TENSORBOARD_LOG_DIR']
         logging.info(f'AIP_TENSORBOARD_LOG_DIR: {log_dir}')
@@ -394,12 +395,12 @@ def main(args):
     
     # model checkpoints - ModelCheckpoint | BackupAndRestore
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_dir + "/cp-{epoch:03d}-loss={loss:.2f}.ckpt", # cp-{epoch:04d}.ckpt" cp-{epoch:04d}.ckpt"
+        filepath=log_dir + "/cp-{epoch:03d}-loss={loss:.2f}.ckpt", # checkpoint_dir
         save_weights_only=True,
         save_best_only=True,
         monitor='total_loss',
         mode='min',
-        save_freq=args.chkpt_freq,
+        save_freq='epoch', #args.chkpt_freq,
         verbose=1,
     )
 
@@ -410,7 +411,9 @@ def main(args):
             histogram_freq=args.hist_frequency, 
             write_graph=True,
             profile_batch=(25, 30),
-            update_freq='epoch', 
+            update_freq=args.update_frequency,  # 'epoch'
+            embeddings_freq=args.embed_frequency,
+            embeddings_metadata=log_dir + "/embs/metadata.tsv"
         )
         logging.info(f'Tensorboard callback should profile batches...')
         
@@ -420,6 +423,9 @@ def main(args):
             log_dir=log_dir,
             histogram_freq=args.hist_frequency, 
             write_graph=True,
+            update_freq=args.update_frequency,  # 'epoch'
+            embeddings_freq=args.embed_frequency,
+            embeddings_metadata=log_dir + "/embs/metadata.tsv"
         )
         logging.info(f'Tensorboard callback NOT profiling batches...')
 

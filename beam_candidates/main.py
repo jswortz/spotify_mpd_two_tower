@@ -1,5 +1,8 @@
 from datetime import datetime
-import sys
+import sys 
+
+import warnings
+warnings.filterwarnings('ignore')
 
 # setup
 PROJECT_ID = sys.argv[1]                             # 'hybrid-vertex'

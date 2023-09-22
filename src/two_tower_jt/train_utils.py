@@ -1,14 +1,147 @@
+import os
 import numpy as np
+from typing import Optional
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 import tensorflow as tf
 import logging
 
 from google.cloud import storage
 
+# ===================================================
+# get accelerator_config
+# ===================================================
+def get_accelerator_config(
+    key: str, 
+    reduction_n: Optional[int],
+    accelerator_per_machine: int = 1, 
+    worker_n: int = 1,
+    worker_machine_type: str = 'n1-highmem-16',
+    reduction_machine_type: str = "n1-highcpu-16", 
+    distribute: str = 'single',
+):
+    """
+    returns GPU configuration for vertex training
+    
+    example:
+        desired_config = get_accelerator_config(MY_CHOICE)
+    """
+    if key == "a100-40":
+        WORKER_MACHINE_TYPE = 'a2-highgpu-1g'
+        REPLICA_COUNT = worker_n
+        ACCELERATOR_TYPE = 'NVIDIA_TESLA_A100'
+        PER_MACHINE_ACCELERATOR_COUNT = accelerator_per_machine
+        REDUCTION_SERVER_COUNT = reduction_n                                                 
+        REDUCTION_SERVER_MACHINE_TYPE = reduction_machine_type
+        DISTRIBUTE_STRATEGY = distribute
+    if key == "a100-80":
+        WORKER_MACHINE_TYPE = 'a2-ultragpu-1g'
+        REPLICA_COUNT = worker_n
+        ACCELERATOR_TYPE = 'NVIDIA_A100_80GB'
+        PER_MACHINE_ACCELERATOR_COUNT = accelerator_per_machine
+        REDUCTION_SERVER_COUNT = reduction_n                                                 
+        REDUCTION_SERVER_MACHINE_TYPE = reduction_machine_type
+        DISTRIBUTE_STRATEGY = distribute
+    elif key == 't4':
+        WORKER_MACHINE_TYPE = worker_machine_type          #'n1-standard-16'
+        REPLICA_COUNT = worker_n
+        ACCELERATOR_TYPE = 'NVIDIA_TESLA_T4'               # NVIDIA_TESLA_V100
+        PER_MACHINE_ACCELERATOR_COUNT = accelerator_per_machine
+        DISTRIBUTE_STRATEGY = distribute
+        REDUCTION_SERVER_COUNT = reduction_n                                                   
+        REDUCTION_SERVER_MACHINE_TYPE = reduction_machine_type
+    elif key == 'v100':
+        WORKER_MACHINE_TYPE = worker_machine_type          #'n1-standard-16'
+        REPLICA_COUNT = worker_n
+        ACCELERATOR_TYPE = 'NVIDIA_TESLA_V100'
+        PER_MACHINE_ACCELERATOR_COUNT = accelerator_per_machine
+        DISTRIBUTE_STRATEGY = distribute
+        REDUCTION_SERVER_COUNT = reduction_n                                                   
+        REDUCTION_SERVER_MACHINE_TYPE = reduction_machine_type
+    elif key == "no_gpu":
+        WORKER_MACHINE_TYPE = worker_machine_type          #'n2-highmem-32'|'n1-highmem-96'|'n2-highmem-92'
+        REPLICA_COUNT = worker_n
+        ACCELERATOR_TYPE = None
+        PER_MACHINE_ACCELERATOR_COUNT = accelerator_per_machine
+        DISTRIBUTE_STRATEGY = distribute
+        REDUCTION_SERVER_COUNT = reduction_n                                                 
+        REDUCTION_SERVER_MACHINE_TYPE = reduction_machine_type
+    else:
+        print(f"Incorrect key entry. Select from ['a100-40','a100-80', 't4', 'v100', 'no_gpu']")
+
+    print(f"WORKER_MACHINE_TYPE            : {WORKER_MACHINE_TYPE}")
+    print(f"REPLICA_COUNT                  : {REPLICA_COUNT}")
+    print(f"ACCELERATOR_TYPE               : {ACCELERATOR_TYPE}")
+    print(f"PER_MACHINE_ACCELERATOR_COUNT  : {PER_MACHINE_ACCELERATOR_COUNT}")
+    print(f"DISTRIBUTE_STRATEGY            : {DISTRIBUTE_STRATEGY}")
+    print(f"REDUCTION_SERVER_COUNT         : {REDUCTION_SERVER_COUNT}")
+    print(f"REDUCTION_SERVER_MACHINE_TYPE  : {REDUCTION_SERVER_MACHINE_TYPE}")
+    
+    accelerator_dict = {
+        "WORKER_MACHINE_TYPE": WORKER_MACHINE_TYPE,
+        "REPLICA_COUNT": REPLICA_COUNT,
+        "ACCELERATOR_TYPE": ACCELERATOR_TYPE,
+        "PER_MACHINE_ACCELERATOR_COUNT": PER_MACHINE_ACCELERATOR_COUNT,
+        'REDUCTION_SERVER_COUNT': REDUCTION_SERVER_COUNT,
+        "REDUCTION_SERVER_MACHINE_TYPE": REDUCTION_SERVER_MACHINE_TYPE,
+        "DISTRIBUTE_STRATEGY": DISTRIBUTE_STRATEGY,
+    }
+    return accelerator_dict
+
+# ====================================================
+# TensorBoard Callbacks
+# ====================================================
+def get_upload_logs_to_manged_tb_command(
+    ttl_hrs,
+    LOG_DIR,
+    TB_RESOURCE_NAME,
+    EXPERIMENT_NAME,
+    oneshot="false"
+):
+    """
+    Run this and copy/paste the command into terminal to have 
+    upload the tensorboard logs from this machine to the managed tb instance
+    Note that the log dir is at the granularity of the run to help select the proper
+    timestamped run in Tensorboard
+    You can also run this in one-shot mode after training is done 
+    to upload all tb objects at once
+    """
+    return(f"""tb-gcp-uploader --tensorboard_resource_name={TB_RESOURCE_NAME} \
+      --logdir={LOG_DIR} \
+      --experiment_name={EXPERIMENT_NAME} \
+      --one_shot={oneshot} \
+      --event_file_inactive_secs={60*60*ttl_hrs}""")
+
+# tensorboard callback
+class UploadTBLogsBatchEnd(tf.keras.callbacks.Callback):
+    def __init__(
+        self,
+        log_dir: str,
+        experiment_name: str,
+        tb_resource_name: int
+    ):
+        self.log_dir = log_dir
+        self.experiment_name = experiment_name
+        self.tb_resource_name = tb_resource_name
+    '''
+    ecapsulates one-shot log uploader via a custom callback
+
+    '''
+    def on_epoch_end(self, epoch, logs=None):
+        os.system(
+            get_upload_logs_to_manged_tb_command(
+                ttl_hrs = 5, 
+                oneshot="true",
+                LOG_DIR=log_dir,
+                TB_RESOURCE_NAME=tb_resource_name,
+                EXPERIMENT_NAME=experiment_name,
+            )
+        )
+        
 # ====================================================
 # Helper functions
 # ====================================================
-
 # upload files to Google Cloud Storage
 def upload_blob(bucket_name, source_file_name, destination_blob_name, project_id):
     """Uploads a file to the bucket."""

@@ -2,6 +2,12 @@
 import gcsfs
 import numpy as np
 
+import os 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
+import warnings
+warnings.filterwarnings('ignore')
+
 import tensorflow as tf
 
 from datetime import datetime
@@ -124,7 +130,6 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_valence_can": _float_feature(data['track_valence_can']),
             "track_tempo_can": _float_feature(data['track_tempo_can']),
             "track_time_signature_can": _string_array(data['track_time_signature_can']), # track_time_signature_can
-            "candidate_rank": _float_feature(data['candidate_rank']),
             
             # ===================================================
             # Set playlist_seed_tracks (list types)
@@ -157,6 +162,9 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_liveness_pl": _float_feature(data['track_liveness_pl']),
             "track_valence_pl": _float_feature(data['track_valence_pl']),
             "track_tempo_pl": _float_feature(data['track_tempo_pl']),
+            
+            # Rank labels
+            "candidate_rank": _float_feature(data['candidate_rank']),
         }
         
         yield tf.train.Example(features=tf.train.Features(feature=features))

@@ -44,6 +44,7 @@ def test_model_index_endpoint(
     from typing import Dict, List, Union
 
     from google.cloud import aiplatform as vertex_ai
+    
     from google.protobuf import json_format
     from google.protobuf.json_format import Parse
     from google.protobuf.struct_pb2 import Value
@@ -186,18 +187,28 @@ def test_model_index_endpoint(
     
     logging.info('Retreiving neighbors from ANN index...')
     
+    start = time.time()
     ANN_response = deployed_ann_index.match(
         deployed_index_id=DEPLOYED_ANN_ID,
         queries=prediction_test,
         num_neighbors=10
     )
+    elapsed_ann_time = time.time() - start
+    elapsed_ann_time = round(elapsed_ann_time, 4)
+    logging.info(f'ANN latency: {elapsed_ann_time} seconds')
     
     logging.info('Retreiving neighbors from BF index...')
+    
+    start = time.time()
     BF_response = deployed_bf_index.match(
         deployed_index_id=DEPLOYED_BF_ID,
         queries=prediction_test,
         num_neighbors=10
     )
+    
+    elapsed_bf_time = time.time() - start
+    elapsed_bf_time = round(elapsed_bf_time, 4)
+    logging.info(f'Bruteforce latency: {elapsed_bf_time} seconds')
     
     # =========================================================
     # Calculate recall by determining how many neighbors 
@@ -217,7 +228,24 @@ def test_model_index_endpoint(
     recall = recalled_neighbors / len(
         [neighbor for neighbors in BF_response for neighbor in neighbors]
     )
+    
+    # =========================================================
+    # Metrics
+    # =========================================================
+    reduction = (elapsed_bf_time - elapsed_ann_time) / elapsed_bf_time*100.00
+    increase  = (elapsed_bf_time - elapsed_ann_time)/elapsed_ann_time*100.00
+    faster    = elapsed_bf_time / elapsed_ann_time
 
-    logging.info("Recall: {}".format(recall))
+    logging.info(f"reduction in time         : {round(reduction, 3)}%")
+    logging.info(f"% increase in performance : {round(increase, 3)}%")
+    logging.info(f"how many times faster     : {round(faster, 3)}x faster")
+
+    logging.info("Recall: {}".format(recall * 100.0))
     
     metrics.log_metric("Recall", (recall * 100.0))
+    # metrics.log_metric("elapsed_query_time", elapsed_query_time)
+    metrics.log_metric("elapsed_ann_time", elapsed_ann_time)
+    metrics.log_metric("elapsed_bf_time", elapsed_bf_time)
+    metrics.log_metric("latency_reduction", reduction)
+    metrics.log_metric("perf_increase", increase)
+    metrics.log_metric("x_faster", faster)

@@ -20,9 +20,12 @@ from google.cloud import storage
 # from src.ranking import train_config as cfg
 
 # relative imports running cloud
-import train_utils
-import train_config as cfg
+# import train_utils
+# import train_config as cfg
 
+# from . import feature_sets
+from . import train_utils
+from . import train_config as cfg
 # ================================================================
 
 MAX_PLAYLIST_LENGTH = cfg.TRACK_HISTORY # 5 | cfg.MAX_PLAYLIST_LENGTH
@@ -563,18 +566,25 @@ class TheRankingModel(tfrs.models.Model):
             , projection_dim = projection_dim
         )
 
-        self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
-            loss = tf.keras.losses.MeanSquaredError(
-                reduction=tf.keras.losses.Reduction.SUM
-            )
-            , metrics = [
-                tf.keras.metrics.RootMeanSquaredError(name="rmse_metric")
-                # , tfr.keras.metrics.NDCGMetric(
-                #     name="ndcg_metric"
-                #     , ragged = True
-                # )
-            ]
+        self.task = tfrs.tasks.Ranking(
+          loss=tf.keras.losses.MeanSquaredError(),
+          metrics=[
+            tf.keras.metrics.RootMeanSquaredError()
+          ]
         )
+            
+        # tfr.keras.metrics.NDCGMetric(name="ndcg_metric"),
+        #     loss = tf.keras.losses.MeanSquaredError(
+        #         reduction=tf.keras.losses.Reduction.SUM
+        #     )
+        #     , metrics = [
+        #         tf.keras.metrics.RootMeanSquaredError(name="rmse_metric")
+        #         # , tfr.keras.metrics.NDCGMetric(
+        #         #     name="ndcg_metric"
+        #         #     , ragged = True
+        #         # )
+        #     ]
+        # )
 
     def call(self, features: Dict[str, tf.Tensor]) -> tf.Tensor:
         return self.ranking_model(features)

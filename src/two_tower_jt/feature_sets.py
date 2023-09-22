@@ -1,43 +1,8 @@
+import os 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import tensorflow as tf
 
-# import modules
-
-# import train_config as cfg
-# import train_utils
-
-# from . import train_config as cfg
-# from . import train_utils
-
-# from src.two_tower_jt import train_config as cfg
-# from src.two_tower_jt import train_utils
-
-# from .train_utils import (
-#     full_parse, 
-#     get_train_strategy, 
-#     _is_chief, 
-#     get_arch_from_string, 
-#     tf_if_null_return_zero, 
-#     get_buckets_20, 
-#     upload_blob
-# )
-
-
 MAX_PLAYLIST_LENGTH = 5 # cfg.MAX_PLAYLIST_LENGTH
-
-
-# def _bytes_feature(value):
-#     """Returns a bytes_list from a string / byte."""
-#     if isinstance(value, type(tf.constant(0))):
-#         value = value.numpy() # BytesList won't unpack a string from an EagerTensor.
-#     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-# def _float_feature(value):
-#     """Returns a float_list from a float / double."""
-#     return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
-
-# def _int64_feature(value):
-#     """Returns an int64_list from a bool / enum / int / uint."""
-#     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 def get_candidate_features():
     '''
@@ -156,6 +121,7 @@ def get_all_features(MAX_PLAYLIST_LENGTH):
     
     return feats
 
+
 # tf data parsing functions
 options = tf.data.Options()
 options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
@@ -168,6 +134,8 @@ def full_parse(data):
 
 def parse_tfrecord(example):
     """
+    TODO - will move once parse functions below are completely adopted
+    
     Reads a serialized example from GCS and converts to tfrecord
     """
     feats = get_all_features(MAX_PLAYLIST_LENGTH)
@@ -180,6 +148,19 @@ def parse_tfrecord(example):
     )
     return example
 
+def parse_towers_tfrecord(example):
+    """
+    Reads a serialized example from GCS and converts to tfrecord
+    """
+    feats = get_all_features(MAX_PLAYLIST_LENGTH, ranker=False)
+    
+    # example = tf.io.parse_single_example(
+    example = tf.io.parse_example(
+        example,
+        feats
+        # features=feats
+    )
+    return example
 
 def parse_candidate_tfrecord_fn(example):
     """
@@ -196,3 +177,23 @@ def parse_candidate_tfrecord_fn(example):
     return example
 
 # get_candidate_features, get_all_features, full_parse, parse_tfrecord, parse_candidate_tfrecord_fn
+
+# # ===================================================
+# # get feature mapping
+# # ===================================================
+# def get_feature_mapping(key):
+#     """
+#     returns chosen parse function
+    
+#     example:
+#         desired_mapping = get_feature_mapping(MY_CHOICE)
+#     """
+    
+#     map_dict = {
+#         "towers": parse_towers_tfrecord,
+#         "rank": parse_rank_tfrecord,
+#         "audio-rank": parse_audio_rank_tfrecord,
+#         "lw-audio-rank": parse_lw_audio_rank_tfrecord,
+#         # "query": feature_utils.parse_XXXX,
+#     }
+#     return map_dict[key]
