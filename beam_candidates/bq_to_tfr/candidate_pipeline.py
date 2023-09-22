@@ -12,10 +12,10 @@ from apache_beam.options.pipeline_options import SetupOptions
 
 
 def _int64_feature(value):
-        """
-        Get int64 feature
-        """
-        return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+    """
+    Get int64 feature
+    """
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
     
 def _string_array(value):
     """

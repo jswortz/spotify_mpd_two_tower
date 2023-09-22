@@ -86,7 +86,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
         # ===============================
         features = {
             # playlist - context features
-            # "pid": _string_array(data['pl_name_src']),
+            # "pid": _string_array(data['pid']),
             "pl_name_src": _string_array(data['pl_name_src']),
             'pl_collaborative_src' : _string_array(data['pl_collaborative_src']),
             # 'num_pl_followers_src' : _float_feature(data['num_pl_followers_src']),
@@ -124,7 +124,7 @@ class TrainTfSeqExampleDoFn(beam.DoFn):
             "track_valence_can": _float_feature(data['track_valence_can']),
             "track_tempo_can": _float_feature(data['track_tempo_can']),
             "track_time_signature_can": _string_array(data['track_time_signature_can']), # track_time_signature_can
-            # "candidate_rank": _float_feature(data['candidate_rank']),
+            "candidate_rank": _float_feature(data['candidate_rank']),
             
             # ===================================================
             # Set playlist_seed_tracks (list types)
