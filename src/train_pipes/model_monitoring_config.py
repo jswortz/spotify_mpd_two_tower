@@ -9,7 +9,7 @@ from kfp.v2.dsl import (
     base_image="python:3.9",
     packages_to_install=[
         'google-cloud-aiplatform==1.26.1',
-        # 'google-cloud-pipeline-components',
+        'google-cloud-pipeline-components',
         'google-cloud-storage',
         'tensorflow==2.11.0',
         'numpy'
@@ -21,6 +21,7 @@ def model_monitoring_config(
     version: str,
     prefix: str,
     emails: str,
+    train_output_gcs_bucket: str,
     # feature_dict: dict, # TODO
     bq_dataset: str,
     bq_train_table: str,
@@ -109,7 +110,7 @@ def model_monitoring_config(
     # ===================================================
     QUERY_FILENAME = 'query_feats_dict.pkl'
     # FEATURES_PREFIX = f'{experiment_name}/{experiment_run}/features'
-    GCS_PATH_TO_BLOB = f'{experiment_name}/{experiment_run}/features'
+    GCS_PATH_TO_BLOB = f'{experiment_name}/{experiment_run}/features/{QUERY_FILENAME}'
     
     loaded_feat_dict = download_blob(
         bucket_name=train_output_gcs_bucket,
@@ -118,7 +119,7 @@ def model_monitoring_config(
     )
     logging.info(f'loaded_feat_dict: {loaded_feat_dict}')
     
-    filehandler = open(loaded_feat_dict, 'rb')
+    filehandler = open(QUERY_FILENAME, 'rb')
     FEAT_DICT = pkl.load(filehandler)
     filehandler.close()
     
@@ -197,7 +198,7 @@ def model_monitoring_config(
         display_name=JOB_DISPLAY_NAME,
         project=project,
         location=location,
-        endpoint=endpoint,
+        endpoint=_endpoint,
         logging_sampling_strategy=logging_sampling_strategy,
         schedule_config=schedule_config,
         alert_config=alert_config,

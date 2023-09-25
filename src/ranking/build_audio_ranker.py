@@ -565,13 +565,26 @@ class TheRankingModel(tfrs.models.Model):
             , embedding_dim = embedding_dim
             , projection_dim = projection_dim
         )
-
-        self.task = tfrs.tasks.Ranking(
-          loss=tf.keras.losses.MeanSquaredError(),
-          metrics=[
-            tf.keras.metrics.RootMeanSquaredError()
-          ]
+        
+        self.task: tf.keras.layers.Layer = tfrs.tasks.Ranking(
+            loss = tf.keras.losses.MeanSquaredError(
+                # reduction=tf.keras.losses.Reduction.SUM
+            )
+            , metrics = [
+                tf.keras.metrics.RootMeanSquaredError(name="rmse_metric")
+                # , tfr.keras.metrics.NDCGMetric(
+                #     name="ndcg_metric"
+                #     , ragged = True
+                # )
+            ]
         )
+
+        # self.task = tfrs.tasks.Ranking(
+        #   loss=tf.keras.losses.MeanSquaredError(),
+        #   metrics=[
+        #     tf.keras.metrics.RootMeanSquaredError()
+        #   ]
+        # )
             
         # tfr.keras.metrics.NDCGMetric(name="ndcg_metric"),
         #     loss = tf.keras.losses.MeanSquaredError(

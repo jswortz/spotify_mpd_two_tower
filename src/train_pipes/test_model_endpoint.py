@@ -9,7 +9,7 @@ from kfp.v2.dsl import (
     base_image="python:3.9",
     packages_to_install=[
         'google-cloud-aiplatform==1.26.1',
-        # 'google-cloud-pipeline-components',
+        'google-cloud-pipeline-components',
         'google-cloud-storage',
         'tensorflow==2.11.0',
         'numpy'

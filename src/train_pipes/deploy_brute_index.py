@@ -48,7 +48,7 @@ def deploy_brute_index(
 
     index_endpoint = index_endpoint.deploy_index(
         index=brute_index, 
-        deployed_index_id=f'{deployed_brute_force_index_name}', #-{TIMESTAMP}'
+        deployed_index_id=f'{deployed_brute_force_index_name}' #-{TIMESTAMP}'
     )
 
     logging.info(f"index_endpoint.deployed_indexes: {index_endpoint.deployed_indexes}")
