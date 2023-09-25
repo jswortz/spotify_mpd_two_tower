@@ -1,6 +1,12 @@
+import os
 # import argparse
 import gcsfs
 import numpy as np
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
+import warnings
+warnings.filterwarnings('ignore')
 
 import tensorflow as tf
 
