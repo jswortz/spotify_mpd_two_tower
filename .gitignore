@@ -1,13 +1,21 @@
+__init__.cpython*
+candidate_pipeline.cypthon*
 *.cpython-310.pyc
 *.cpython-37.pyc
-*checkpoint*
+*-checkpoint.py*
 *.ipynb_checkpoints
 *.ipynb_checkpoints/*
 *WIP*
+*ARCHIVED*
 # .gcloudignore
 # .git
-# .github
+.github
 *__pycache__
-# *cpython-37.pyc
-# .gitignore
-# .DS_Store
+*cpython-37.pyc
+.gitignore
+.DS_Store
+
+# Pyhon byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
