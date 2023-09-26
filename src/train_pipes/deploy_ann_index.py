@@ -35,22 +35,32 @@ def deploy_ann_index(
         project=project,
         location=location,
     )
-    TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
-    deployed_ann_index_name = deployed_ann_index_name.replace('-', '_')
-    logging.info(f"deployed_ann_index_name: {deployed_ann_index_name}")
     
+    # define vars
+    TIMESTAMP = datetime.now().strftime("%Y%m%d%H%M%S")
+    # deployed_ann_index_name = deployed_ann_index_name.replace('-', '_')
+    # logging.info(f"deployed_ann_index_name: {deployed_ann_index_name}")
+    
+    DEPLOYED_INDEX_NAME = f'{deployed_ann_index_name}-{TIMESTAMP}'
+    logging.info(f"DEPLOYED_INDEX_NAME: {DEPLOYED_INDEX_NAME}")
+    
+    # init index
     ann_index = vertex_ai.MatchingEngineIndex(
       index_name=ann_index_resource_uri
     )
     ann_index_resource_uri = ann_index.resource_name
+    logging.info(f"ann_index_resource_uri: {ann_index_resource_uri}")
 
+    # init index endpoint
     index_endpoint = vertex_ai.MatchingEngineIndexEndpoint(
       index_endpoint_resource_uri
     )
+    logging.info(f"index_endpoint: {index_endpoint}")
 
+    # deploy index to endpoint
     index_endpoint = index_endpoint.deploy_index(
       index=ann_index, 
-      deployed_index_id=f'{deployed_ann_index_name}' #-{TIMESTAMP}'
+      deployed_index_id=DEPLOYED_INDEX_NAME
     )
 
     logging.info(f"index_endpoint.deployed_indexes: {index_endpoint.deployed_indexes}")

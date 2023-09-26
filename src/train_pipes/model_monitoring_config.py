@@ -122,11 +122,7 @@ def model_monitoring_config(
     filehandler = open(QUERY_FILENAME, 'rb')
     FEAT_DICT = pkl.load(filehandler)
     filehandler.close()
-    
-    # logging.info(f'len(FEAT_DICT): {len(FEAT_DICT)}')
-    # QUERY_FILENAME = 'query_feats_dict.pkl'
-    # FEATURES_PREFIX = f'{experiment_name}/{experiment_run}/features'
-    # print(f"FEATURES_PREFIX: {FEATURES_PREFIX}")
+
     
     feature_names = list(FEAT_DICT.keys())
 

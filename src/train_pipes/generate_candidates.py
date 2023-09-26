@@ -158,31 +158,38 @@ def generate_candidates(
     start_time = time.time()
 
     # TODO: parameterize
-    embs_iter = parsed_candidate_dataset.batch(1).map(
-        lambda data: candidate_predictor(
-            track_uri_can = data["track_uri_can"],
-            track_name_can = data['track_name_can'],
-            artist_uri_can = data['artist_uri_can'],
-            artist_name_can = data['artist_name_can'],
-            album_uri_can = data['album_uri_can'],
-            album_name_can = data['album_name_can'],
-            duration_ms_can = data['duration_ms_can'],
-            track_pop_can = data['track_pop_can'],
-            artist_pop_can = data['artist_pop_can'],
-            artist_genres_can = data['artist_genres_can'],
-            artist_followers_can = data['artist_followers_can'],
-            track_danceability_can = data['track_danceability_can'],
-            track_energy_can = data['track_energy_can'],
-            track_key_can = data['track_key_can'],
-            track_loudness_can = data['track_loudness_can'],
-            track_mode_can = data['track_mode_can'],
-            track_speechiness_can = data['track_speechiness_can'],
-            track_acousticness_can = data['track_acousticness_can'],
-            track_instrumentalness_can = data['track_instrumentalness_can'],
-            track_liveness_can = data['track_liveness_can'],
-            track_valence_can = data['track_valence_can'],
-            track_tempo_can = data['track_tempo_can'],
-            track_time_signature_can = data['track_time_signature_can']
+    # embs_iter = parsed_candidate_dataset.batch(1).map(
+    #     lambda data: candidate_predictor(
+    #         track_uri_can = data["track_uri_can"],
+    #         track_name_can = data['track_name_can'],
+    #         artist_uri_can = data['artist_uri_can'],
+    #         artist_name_can = data['artist_name_can'],
+    #         album_uri_can = data['album_uri_can'],
+    #         album_name_can = data['album_name_can'],
+    #         duration_ms_can = data['duration_ms_can'],
+    #         track_pop_can = data['track_pop_can'],
+    #         artist_pop_can = data['artist_pop_can'],
+    #         artist_genres_can = data['artist_genres_can'],
+    #         artist_followers_can = data['artist_followers_can'],
+    #         track_danceability_can = data['track_danceability_can'],
+    #         track_energy_can = data['track_energy_can'],
+    #         track_key_can = data['track_key_can'],
+    #         track_loudness_can = data['track_loudness_can'],
+    #         track_mode_can = data['track_mode_can'],
+    #         track_speechiness_can = data['track_speechiness_can'],
+    #         track_acousticness_can = data['track_acousticness_can'],
+    #         track_instrumentalness_can = data['track_instrumentalness_can'],
+    #         track_liveness_can = data['track_liveness_can'],
+    #         track_valence_can = data['track_valence_can'],
+    #         track_tempo_can = data['track_tempo_can'],
+    #         track_time_signature_can = data['track_time_signature_can']
+    #     )
+    # )
+    
+    embs_iter = parsed_candidate_dataset.batch(10000).map(
+        lambda data: (
+            data["track_uri_can"],
+            loaded_candidate_model(data)
         )
     )
     
@@ -192,9 +199,9 @@ def generate_candidates(
 
     end_time = time.time()
     elapsed_time = int((end_time - start_time) / 60)
-    logging.info(f"elapsed_time: {elapsed_time}")
-    logging.info(f"Length of embs: {len(embs)}")
-    logging.info(f"embeddings[0]: {embs[0]}")
+    logging.info(f"elapsed_time   : {elapsed_time}")
+    logging.info(f"Length of embs : {len(embs)}")
+    logging.info(f"embeddings[0]  : {embs[0]}")
     
     # ====================================================
     # prep Track IDs and Vectors for JSON
@@ -202,19 +209,24 @@ def generate_candidates(
     logging.info("Cleaning embeddings and track IDs...")
     start_time = time.time()
     
-    cleaned_embs = [x['output_1'].numpy()[0] for x in embs] #clean up the output
+    # cleaned_embs = [x['output_1'].numpy()[0] for x in embs] #clean up the output
+    
+    cleaned_embs = []
+    track_uris = []
+    
+    for ids , embedding in embs:
+        cleaned_embs.extend(embedding.numpy())
+        track_uris.extend(ids.numpy())
     
     end_time = time.time()
     elapsed_time = int((end_time - start_time) / 60)
-    logging.info(f"elapsed_time: {elapsed_time}")
-    logging.info(f"Length of cleaned_embs: {len(cleaned_embs)}")
-    
-    # clean track IDs
-    track_uris = [x['track_uri_can'].numpy() for x in parsed_candidate_dataset]
+    logging.info(f"elapsed_time           : {elapsed_time}")
+    logging.info(f"Length of cleaned_embs : {len(cleaned_embs)}")
     logging.info(f"Length of track_uris: {len(track_uris)}")
     
     track_uris_decoded = [z.decode("utf-8") for z in track_uris]
-    logging.info(f"Length of track_uris_decoded: {len(track_uris_decoded)}")
+    logging.info(f"Length of track_uris decoded: {len(track_uris_decoded)}")
+    logging.info(f"track_uris_decoded[0]       : {track_uris_decoded[0]}")
     
     # check for bad records
     bad_records = []
@@ -251,7 +263,7 @@ def generate_candidates(
     # writting JSON file to GCS
     # ====================================================
     TIMESTAMP = time.strftime("%Y%m%d-%H%M%S")
-    embeddings_index_filename = f'candidate_embs_{version}_{TIMESTAMP}.json'
+    embeddings_index_filename = f'candidate_embs.json'
 
     with open(f'{embeddings_index_filename}', 'w') as f:
         for prod, emb in zip(track_uris_valid, emb_valid):
@@ -260,7 +272,7 @@ def generate_candidates(
             f.write("\n")
             
     # write to GCS
-    INDEX_GCS_URI = f'{experiment_run_dir}/candidate-embeddings-{version}'
+    INDEX_GCS_URI = f'{experiment_run_dir}/candidate-embeddings-{TIMESTAMP}'
     logging.info(f"INDEX_GCS_URI: {INDEX_GCS_URI}")
 
     DESTINATION_BLOB_NAME = embeddings_index_filename
