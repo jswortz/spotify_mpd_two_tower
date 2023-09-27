@@ -1,9 +1,9 @@
 TRACK_FEATURE_CONFIGS = {
-    "track_uri_can": {
-        "value_type": "STRING",
-        "description": "unique track ID; also uri",
-        "labels": {"status": "passed"},
-    },
+    # "track_uri_can": {
+    #     "value_type": "STRING",
+    #     "description": "unique track ID; also uri",
+    #     "labels": {"status": "passed"},
+    # },
     "track_name_can": {
         "value_type": "STRING",
         "description": "name (text) of track",

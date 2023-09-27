@@ -156,35 +156,6 @@ def generate_candidates(
     logging.info("Starting candidate dataset mapping...")
     
     start_time = time.time()
-
-    # TODO: parameterize
-    # embs_iter = parsed_candidate_dataset.batch(1).map(
-    #     lambda data: candidate_predictor(
-    #         track_uri_can = data["track_uri_can"],
-    #         track_name_can = data['track_name_can'],
-    #         artist_uri_can = data['artist_uri_can'],
-    #         artist_name_can = data['artist_name_can'],
-    #         album_uri_can = data['album_uri_can'],
-    #         album_name_can = data['album_name_can'],
-    #         duration_ms_can = data['duration_ms_can'],
-    #         track_pop_can = data['track_pop_can'],
-    #         artist_pop_can = data['artist_pop_can'],
-    #         artist_genres_can = data['artist_genres_can'],
-    #         artist_followers_can = data['artist_followers_can'],
-    #         track_danceability_can = data['track_danceability_can'],
-    #         track_energy_can = data['track_energy_can'],
-    #         track_key_can = data['track_key_can'],
-    #         track_loudness_can = data['track_loudness_can'],
-    #         track_mode_can = data['track_mode_can'],
-    #         track_speechiness_can = data['track_speechiness_can'],
-    #         track_acousticness_can = data['track_acousticness_can'],
-    #         track_instrumentalness_can = data['track_instrumentalness_can'],
-    #         track_liveness_can = data['track_liveness_can'],
-    #         track_valence_can = data['track_valence_can'],
-    #         track_tempo_can = data['track_tempo_can'],
-    #         track_time_signature_can = data['track_time_signature_can']
-    #     )
-    # )
     
     embs_iter = parsed_candidate_dataset.batch(10000).map(
         lambda data: (

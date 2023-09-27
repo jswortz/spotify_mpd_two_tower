@@ -118,11 +118,11 @@ def test_model_endpoint(
     # Send predictions
     # ====================================================
     # TOTAL_ROUNDS = 4
-    SLEEP_SECONDS = 10 
-    START=2
-    END=6
+    SLEEP_SECONDS = 2 
+    START=1
+    END=4
 
-    logging.info(f"testing online endpoint for {END - START} rounds")
+    logging.info(f"testing online endpoint for {END} rounds")
     
     for i in range(START, END+1):
         
@@ -136,79 +136,7 @@ def test_model_endpoint(
 
             count += 1
             
-        logging.info(f"finsihed round {i} of {END - START}")
+        logging.info(f"finsihed round {i} of {END}")
         time.sleep(SLEEP_SECONDS)
         
     logging.info(f"endpoint test complete - {count} predictions sent")
-    
-    # ====================================================
-    # Send skewed predictions
-    # ====================================================
-    SKEW_FEATURES_STATS_FILE = 'skew_feat_stats.pkl'
-    GCS_PATH_TO_BLOB = f'{experiment_name}/{experiment_run}/{SKEW_FEATURES_STATS_FILE}'
-    SKEW_FEATURES_STATS_FILE = SKEW_FEATURES_STATS_FILE
-    
-    loaded_skew_test_instance = download_blob(
-        bucket_name=train_output_gcs_bucket,
-        source_gcs_obj=GCS_PATH_TO_BLOB,
-        local_filename=SKEW_FEATURES_STATS_FILE
-    )
-    logging.info(f'loaded_skew_test_instance: {loaded_skew_test_instance}')
-    
-    filehandler = open(SKEW_FEATURES_STATS_FILE, 'rb')
-    SKEW_FEATURES = pkl.load(filehandler)
-    filehandler.close()
-    
-    mean_durations, std_durations = SKEW_FEATURES['pl_duration_ms_new']
-    mean_num_songs, std_num_songs = SKEW_FEATURES['num_pl_songs_new']
-    mean_num_artists, std_num_artists = SKEW_FEATURES['num_pl_artists_new']
-    mean_num_albums, std_num_albums = SKEW_FEATURES['num_pl_albums_new']
-    
-    def monitoring_test(endpoint, instances, skew_feat_stat, start=2, end=4):
-
-        mean_durations, std_durations = skew_feat_stat['pl_duration_ms_new']
-        mean_num_songs, std_num_songs = skew_feat_stat['num_pl_songs_new']
-        mean_num_artists, std_num_artists = skew_feat_stat['num_pl_artists_new']
-        mean_num_albums, std_num_albums = skew_feat_stat['num_pl_albums_new']
-        print(f"std_durations   : {round(std_durations, 0)}")
-        print(f"std_num_songs   : {round(std_num_songs, 0)}")
-        print(f"std_num_artists : {round(std_num_artists, 0)}")
-        print(f"std_num_albums  : {round(std_num_albums, 0)}\n")
-
-        total_preds = 0
-
-        for multiplier in range(start, end+1):
-
-            print(f"multiplier: {multiplier}")
-
-            pred_count = 0
-
-            for example in instances:
-                list_dict = {}
-
-                example['pl_duration_ms_new'] = round(std_durations * multiplier, 0)
-                example['num_pl_songs_new'] = round(std_num_songs * multiplier, 0)
-                example['num_pl_artists_new'] = round(std_num_artists * multiplier, 0)
-                example['num_pl_albums_new'] = round(std_num_albums * multiplier, 0)
-                # list_of_skewed_instances.append(example)
-
-                response = endpoint.predict(instances=[example])
-
-                if pred_count > 0 and pred_count % 250 == 0:
-                    print(f"pred_count: {pred_count}")
-
-                pred_count += 1
-                total_preds += 1
-
-            print(f"sent {pred_count} pred requests with {multiplier}X multiplier")
-
-        print(f"sent {total_preds} total pred requests")
-        
-    # send skewed traffic
-    monitoring_test(
-        endpoint=_endpoint, 
-        instances=LIST_OF_INSTANCES,
-        skew_feat_stat=SKEW_FEATURES,
-        start=2, 
-        end=6
-    )
