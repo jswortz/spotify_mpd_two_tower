@@ -40,7 +40,7 @@ def deploy_brute_index(
     # deployed_brute_force_index_name = deployed_brute_force_index_name.replace('-', '_')
     # logging.info(f"deployed_brute_force_index_name: {deployed_brute_force_index_name}")
     
-    DEPLOYED_INDEX_NAME = f'{deployed_brute_force_index_name}-{TIMESTAMP}'
+    DEPLOYED_INDEX_NAME = f'{deployed_brute_force_index_name}-{TIMESTAMP}'.replace('-', '_')
     logging.info(f"DEPLOYED_INDEX_NAME: {DEPLOYED_INDEX_NAME}")
 
     # init index

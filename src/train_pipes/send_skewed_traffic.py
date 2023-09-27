@@ -23,6 +23,7 @@ def send_skewed_traffic(
     experiment_name: str,
     experiment_run: str,
     endpoint: str, # Input[Artifact],
+    many_test_instances_gcs_filename: str,
     # feature_dict: dict,
     # metrics: Output[Metrics],
 ):

@@ -41,7 +41,7 @@ def deploy_ann_index(
     # deployed_ann_index_name = deployed_ann_index_name.replace('-', '_')
     # logging.info(f"deployed_ann_index_name: {deployed_ann_index_name}")
     
-    DEPLOYED_INDEX_NAME = f'{deployed_ann_index_name}-{TIMESTAMP}'
+    DEPLOYED_INDEX_NAME = f'{deployed_ann_index_name}-{TIMESTAMP}'.replace('-', '_')
     logging.info(f"DEPLOYED_INDEX_NAME: {DEPLOYED_INDEX_NAME}")
     
     # init index
