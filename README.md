@@ -6,7 +6,7 @@ The end to end example (with public data) follows this architecture:
 
 ![](img/arch.png)
 
-### Notebook Overview
+### Notebook Overview - TODO: needs update
 
 0. [00-load-core-data-to-bq](00-load-core-data-to-bq.ipynb) Extract from the zip file and upload to BQ. This notebook then enriches features for the playlist songs
 
