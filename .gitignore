@@ -9,7 +9,7 @@ candidate_pipeline.cypthon*
 *ARCHIVED*
 # .gcloudignore
 # .git
-.github
+# .github
 *__pycache__
 *cpython-37.pyc
 .gitignore
